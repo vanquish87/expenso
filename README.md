@@ -66,7 +66,29 @@ re-seeds from your spreadsheet on the next run. 🌱
 
 > 🤓 *For the curious:* writes are atomic (tempfile + rename), so even if your
 > laptop crashes mid-save, the previous file is intact. Concurrent edits are
-> safe too — there's a lock around every write.
+> safe too — there's a lock around every write. The CSV files themselves are
+> **never deleted** by the app — rows come and go, the durable file stays.
+
+### 📍 Point data anywhere with `.env`
+
+Want your data on an external drive, a synced folder (Dropbox / OneDrive),
+or just outside the repo? Copy **`.env.example`** to **`.env`** and uncomment
+the line:
+
+```dotenv
+# Windows
+EXPENSO_DATA_DIR=D:/Backups/Expenso
+
+# macOS / Linux
+EXPENSO_DATA_DIR=~/Documents/Expenso
+```
+
+The folder is created on the first run if it doesn't exist. Your data
+persists across app restarts — closing and reopening Expenso reads from
+the same files. `.env` is gitignored so machine-specific paths stay yours. 🔒
+
+Same `.env` file lets you override the source workbook, host, and port —
+see [`.env.example`](.env.example) for all available variables.
 
 ---
 

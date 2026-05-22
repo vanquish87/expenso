@@ -223,6 +223,8 @@ data/
 # Env files (in addition to .env already covered above)
 .env.*
 *.env
+# …but DO commit the documented template so new clones know what to set.
+!.env.example
 
 # IDE / editor scratch
 .vscode/

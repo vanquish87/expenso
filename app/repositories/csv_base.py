@@ -8,6 +8,19 @@ Strategy:
  - RLock around every operation: FastAPI runs sync endpoints on a thread
    pool, so concurrent writes are real. Reentrant so a method may call
    another method that also takes the lock.
+
+Durability invariant (intentional, do not break):
+ - The data CSV file at ``self._path`` is never deleted by this class.
+   Operations are Create / Read / Update only at the *file* level.
+ - ``delete(id_)`` removes a *row* by rewriting the file; an emptied
+   repository still leaves a header-only CSV on disk.
+ - The only ``os.unlink`` in this module is on the tempfile when a write
+   fails mid-flight; that file is sibling to the real one and is never
+   the data CSV. ``os.replace`` is an atomic rename, never a delete.
+ - ``replace_all([])`` writes a header-only file but never unlinks the
+   target. If you find yourself adding ``Path.unlink`` or ``os.remove``
+   against ``self._path`` here, stop and reconsider — the durable file
+   is the source of truth, including for an empty dataset.
 """
 from __future__ import annotations
 
