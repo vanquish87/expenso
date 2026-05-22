@@ -12,24 +12,27 @@
   <form class="form form--row" method="post" action="/entries">
     <label class="field">
       <span class="field__label">Date</span>
-      <input class="input" name="date" type="date" value="{{ today }}" required>
+      <input class="input" name="date" type="date" value="{{ form.date or today }}" required>
     </label>
     <label class="field">
       <span class="field__label">Category</span>
       <input class="input" name="category" list="all-categories" autocomplete="off"
-             placeholder="e.g. electronics" required>
+             value="{{ form.category or '' }}" placeholder="e.g. electronics" required>
     </label>
     <label class="field field--grow">
       <span class="field__label">Narration</span>
-      <input class="input" name="narration" maxlength="200" placeholder="e.g. chocolate, lassi…">
+      <input class="input" name="narration" maxlength="200"
+             value="{{ form.narration or '' }}" placeholder="e.g. chocolate, lassi…">
     </label>
     <label class="field field--narrow">
       <span class="field__label">Debit</span>
-      <input class="input num" name="debit" type="number" step="1" min="0" placeholder="0">
+      <input class="input num" name="debit" type="number" step="1" min="0"
+             value="{{ form.debit or '' }}" placeholder="0">
     </label>
     <label class="field field--narrow">
       <span class="field__label">Credit</span>
-      <input class="input num" name="credit" type="number" step="1" min="0" placeholder="0">
+      <input class="input num" name="credit" type="number" step="1" min="0"
+             value="{{ form.credit or '' }}" placeholder="0">
     </label>
     <button type="submit" class="btn btn--primary">Add</button>
   </form>
