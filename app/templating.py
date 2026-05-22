@@ -9,81 +9,162 @@ from .core.settings import settings
 # Order matters: more specific keywords first. The matcher returns the first
 # hit, so e.g. "BILLO'S FOOD" matches "food" before "billo" -> 🍽️.
 _EMOJI_RULES = [
-    # Food & drink
+    # Level / quality tags first — get matched BEFORE the general category
+    # words ("groceries", "restaurant", "food"), so e.g. "GROCERIES - L1 -
+    # BASIC" → 🥖 (not 🛒) and "RESTAURANTS - L3 - LAVISH" → 🥂 (not 🍽️).
+    # That spreads visual variety across the typical L1/L2/L3 ladder.
+    ("basic", "🥖"),
+    ("lavish", "🥂"),
+    ("luxury", "💎"),
+    ("munch", "🍿"),
+
+    # Specific food items (multi-word phrases before single tokens)
     ("ice cream", "🍦"),
     ("pizza", "🍕"),
-    ("munch", "🍿"),
+    ("burger", "🍔"),
+    ("biryani", "🍛"),
+    ("kulcha", "🫓"),
+    ("paratha", "🫓"),
+    ("thali", "🍛"),
+    ("samosa", "🥟"),
+    ("dal", "🥘"),
+    ("snack", "🍪"),
+    ("dairy", "🥛"),
+    ("milk", "🥛"),
+    ("coffee", "☕"),
     ("café", "☕"),
     ("cafe", "☕"),
+    ("tea", "🍵"),
+    ("juice", "🧃"),
+    ("lassi", "🥛"),
+    # Generic eat-out / cook-at-home buckets (later so specifics win first).
+    # "food" before "beverage" so "FOOD & BEVERAGE" → 🍽️ (a meal) instead
+    # of 🍹 (a drink).
     ("restaurant", "🍽️"),
+    ("dining", "🍽️"),
     ("groceries", "🛒"),
-    ("snack", "🍪"),
-    ("beverage", "🍹"),
-    ("dairy", "🥛"),
+    ("grocery", "🛒"),
     ("food", "🍽️"),
-    # Transit / travel
+    ("beverage", "🍹"),
+
+    # Transit / travel — skipping generic "car" / "bus" because they're
+    # substring-greedy: "car" matches "personal CARe", "bus" matches
+    # "BUSiness". Specific modes (taxi / uber / scooter / bike / metro /
+    # rickshaw / train / flight) cover the realistic categories.
     ("petrol", "⛽"),
+    ("diesel", "⛽"),
     ("fuel", "⛽"),
+    ("scooter", "🛵"),
+    ("bike", "🏍️"),
+    ("uber", "🚖"),
+    ("ola", "🚖"),
     ("taxi", "🚖"),
     ("cab", "🚖"),
+    ("rickshaw", "🛺"),
+    ("auto", "🛺"),
     ("metro", "🚇"),
+    ("train", "🚆"),
     ("flight", "✈️"),
+    ("hotel", "🏨"),
     ("travel", "✈️"),
     ("trip", "🧳"),
-    # Utilities & bills
+    ("parking", "🅿️"),
+    ("toll", "🛣️"),
+
+    # Utilities & bills (specific bills first so they win over "utilities")
     ("electricity", "💡"),
     ("phone", "📱"),
+    ("mobile", "📱"),
+    ("recharge", "📱"),
     ("television", "📺"),
+    ("netflix", "🎬"),
+    ("prime", "📦"),
+    ("hotstar", "📺"),
     ("internet", "📶"),
+    ("broadband", "📶"),
+    ("wifi", "📶"),
     ("water", "💧"),
     ("gas", "🔥"),
     ("rent", "🏠"),
+    ("maintenance", "🔧"),
+    ("repair", "🔧"),
     # NOTE: no generic "bill" rule on purpose — it would match "BILLO" as a
     # substring and steal the chip away from BILLO sub-categories. Specific
     # bills (electricity / phone / television / gas) already have their own
     # keywords above; a bare "BILL" category falls to the default 🏷️.
     ("utilities", "🔌"),
+
     # Personal care / health
     ("grooming", "💇"),
     ("personal care", "🧴"),
+    ("haircut", "💇"),
     ("salon", "💇"),
+    ("spa", "💆"),
     ("medical", "💊"),
     ("medicine", "💊"),
+    ("pharmacy", "💊"),
     ("doctor", "🩺"),
+    ("dentist", "🦷"),
     ("hospital", "🏥"),
-    # Lifestyle
+    ("insurance", "🛡️"),
+
+    # Lifestyle / leisure
     ("sport", "🏃"),
     ("gym", "🏋️"),
+    ("yoga", "🧘"),
     ("entertainment", "🎬"),
     ("movie", "🎬"),
+    ("concert", "🎤"),
+    ("game", "🎮"),
     ("subscription", "🔁"),
     ("electronic", "💻"),
+    ("laptop", "💻"),
+    ("camera", "📷"),
     ("shopping", "🛍️"),
     ("clothes", "👕"),
+    ("shoes", "👟"),
     ("books", "📚"),
-    # Family / kids / pets
+
+    # Family / kids / pets / education
     ("school", "🏫"),
+    ("tuition", "📚"),
     ("education", "📚"),
     ("toy", "🧸"),
     ("kid", "👶"),
     ("baby", "👶"),
     ("family", "👨‍👩‍👧‍👦"),
     ("pet", "🐾"),
+    ("dog", "🐶"),
+    ("cat", "🐱"),
+
     # Money flow
     ("pocket", "👛"),
     ("salary", "💰"),
+    ("bonus", "🎉"),
     ("income", "💰"),
+    ("freelance", "💼"),
+    ("business", "💼"),
     ("emi", "💳"),
+    ("credit card", "💳"),
     ("loan", "💳"),
     ("invest", "📈"),
+    ("stock", "📈"),
+    ("mutual fund", "📈"),
     ("savings", "🐷"),
+    ("transfer", "🔁"),
+    ("refund", "💸"),
+
     # Vibe-tags
     ("ghoomna", "🚶"),  # Hindi: roam / outing
+    ("walk", "🚶"),
+    ("outing", "🎈"),
     ("gift", "🎁"),
     ("birthday", "🎂"),
+    ("anniversary", "💐"),
+    ("flowers", "💐"),
     ("cake", "🎂"),
-    ("lavish", "🥂"),
-    ("luxury", "💎"),
+    ("party", "🎉"),
+
     # Named bucket — last so specific sub-cats match their own keyword first.
     ("billo", "🐶"),
 ]
