@@ -210,9 +210,15 @@ body {
 
 /* entries ledger (read-only rows + side actions) */
 .row-actions { display: inline-flex; gap: 6px; align-items: center; }
-.ledger__narr { max-width: 380px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* Narration is the readable, growable column: wrap freely, no ellipsis,
+   and a generous min-width so the column claims real estate in the table
+   auto-layout. */
+.ledger__narr { white-space: normal; word-break: break-word; min-width: 360px; line-height: 1.45; }
 .ledger__actions-head { width: 1%; white-space: nowrap; text-align: right; }
 .ledger__actions { white-space: nowrap; text-align: right; display: flex; gap: 6px; justify-content: flex-end; align-items: center; }
+/* Fixed-width columns next to narration keep narration the elastic one. */
+.ledger td:first-child, .ledger th:first-child { white-space: nowrap; }
+.ledger td:nth-child(2) { white-space: nowrap; }
 .btn--danger { color: #fda4af; }
 .btn--danger:hover { background: rgba(239,68,68,.18); color: #fecaca; }
 
