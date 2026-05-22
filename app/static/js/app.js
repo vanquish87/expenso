@@ -18,6 +18,25 @@
   }
   window.expensoToast = showToast;
 
+  // Tab cards (e.g. /entries Add | Filters): click a tab to swap which
+  // panel is visible. Initial active states are server-rendered, so the
+  // page works even before this script runs.
+  document.querySelectorAll('.tabs').forEach((tabs) => {
+    const buttons = tabs.querySelectorAll('.tabs__tab');
+    const panels  = tabs.querySelectorAll('.tabs__panel');
+    buttons.forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const key = btn.dataset.tab;
+        buttons.forEach((b) => {
+          const active = b === btn;
+          b.classList.toggle('is-active', active);
+          b.setAttribute('aria-selected', String(active));
+        });
+        panels.forEach((p) => p.classList.toggle('is-active', p.dataset.panel === key));
+      });
+    });
+  });
+
   // Hamburger nav (≤1024px): toggle the drawer; close on link click or Escape.
   const menuBtn = document.getElementById('menu-btn');
   const nav = document.getElementById('topbar-nav');

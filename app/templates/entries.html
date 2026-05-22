@@ -8,63 +8,74 @@
 </section>
 
 {% set filters_active = filters.category or filters.date_from or filters.date_to or filters.q %}
-<div class="entries-tabs">
-<details name="entries-tabs" class="card card--collapsible card--tab"{% if not filters_active %} open{% endif %}>
-  <summary class="card__head"><h2>Add entry</h2><span class="card__caret" aria-hidden="true">▾</span></summary>
-  <form class="form form--row form--entry-add" method="post" action="/entries">
-    <label class="field">
-      <span class="field__label">Date</span>
-      <input class="input" name="date" type="date" value="{{ form.date or today }}" required>
-    </label>
-    <label class="field">
-      <span class="field__label">Category</span>
-      <input class="input" name="category" list="all-categories" autocomplete="off"
-             value="{{ form.category or '' }}" placeholder="e.g. electronics" required>
-    </label>
-    <label class="field field--grow">
-      <span class="field__label">Narration</span>
-      <input class="input" name="narration" maxlength="200"
-             value="{{ form.narration or '' }}" placeholder="e.g. chocolate, lassi…">
-    </label>
-    <label class="field field--narrow">
-      <span class="field__label">Debit</span>
-      <input class="input num" name="debit" type="number" step="1" min="0"
-             value="{{ form.debit or '' }}" placeholder="0">
-    </label>
-    <label class="field field--narrow">
-      <span class="field__label">Credit</span>
-      <input class="input num" name="credit" type="number" step="1" min="0"
-             value="{{ form.credit or '' }}" placeholder="0">
-    </label>
-    <button type="submit" class="btn btn--primary">Add</button>
-  </form>
-  <p class="muted hint">Leave one blank (or 0) and fill the other.</p>
-</details>
+<div class="card tabs">
+  <div class="tabs__bar" role="tablist">
+    <button type="button" class="tabs__tab{% if not filters_active %} is-active{% endif %}"
+            data-tab="add" role="tab"
+            aria-selected="{{ 'false' if filters_active else 'true' }}"
+            aria-controls="tab-panel-add">📝 Add entry</button>
+    <button type="button" class="tabs__tab{% if filters_active %} is-active{% endif %}"
+            data-tab="filter" role="tab"
+            aria-selected="{{ 'true' if filters_active else 'false' }}"
+            aria-controls="tab-panel-filter">🔎 Filters{% if filters_active %} <span class="chip chip--soft">active</span>{% endif %}</button>
+  </div>
 
-<details name="entries-tabs" class="card card--collapsible card--tab"{% if filters_active %} open{% endif %}>
-  <summary class="card__head"><h2>Filters{% if filters_active %} <span class="chip chip--soft">active</span>{% endif %}</h2><span class="card__caret" aria-hidden="true">▾</span></summary>
-  <form class="form form--row form--entry-filter" method="get" action="/entries">
-    <label class="field">
-      <span class="field__label">Category</span>
-      <input class="input" name="category" list="all-categories" autocomplete="off"
-             value="{{ filters.category }}" placeholder="any (try: groceries)">
-    </label>
-    <label class="field">
-      <span class="field__label">From</span>
-      <input class="input" name="date_from" type="date" value="{{ filters.date_from }}">
-    </label>
-    <label class="field">
-      <span class="field__label">To</span>
-      <input class="input" name="date_to" type="date" value="{{ filters.date_to }}">
-    </label>
-    <label class="field field--grow">
-      <span class="field__label">Search narration</span>
-      <input class="input" name="q" value="{{ filters.q }}" placeholder="chocolate, lassi…">
-    </label>
-    <button type="submit" class="btn">Apply</button>
-    <a href="/entries" class="btn btn--ghost">Clear</a>
-  </form>
-</details>
+  <section id="tab-panel-add" class="tabs__panel{% if not filters_active %} is-active{% endif %}"
+           data-panel="add" role="tabpanel" aria-labelledby="tab-add">
+    <form class="form form--row form--entry-add" method="post" action="/entries">
+      <label class="field">
+        <span class="field__label">Date</span>
+        <input class="input" name="date" type="date" value="{{ form.date or today }}" required>
+      </label>
+      <label class="field">
+        <span class="field__label">Category</span>
+        <input class="input" name="category" list="all-categories" autocomplete="off"
+               value="{{ form.category or '' }}" placeholder="e.g. electronics" required>
+      </label>
+      <label class="field field--grow">
+        <span class="field__label">Narration</span>
+        <input class="input" name="narration" maxlength="200"
+               value="{{ form.narration or '' }}" placeholder="e.g. chocolate, lassi…">
+      </label>
+      <label class="field field--narrow">
+        <span class="field__label">Debit</span>
+        <input class="input num" name="debit" type="number" step="1" min="0"
+               value="{{ form.debit or '' }}" placeholder="0">
+      </label>
+      <label class="field field--narrow">
+        <span class="field__label">Credit</span>
+        <input class="input num" name="credit" type="number" step="1" min="0"
+               value="{{ form.credit or '' }}" placeholder="0">
+      </label>
+      <button type="submit" class="btn btn--primary">Add</button>
+    </form>
+    <p class="muted hint">Leave one blank (or 0) and fill the other.</p>
+  </section>
+
+  <section id="tab-panel-filter" class="tabs__panel{% if filters_active %} is-active{% endif %}"
+           data-panel="filter" role="tabpanel" aria-labelledby="tab-filter">
+    <form class="form form--row form--entry-filter" method="get" action="/entries">
+      <label class="field">
+        <span class="field__label">Category</span>
+        <input class="input" name="category" list="all-categories" autocomplete="off"
+               value="{{ filters.category }}" placeholder="any (try: groceries)">
+      </label>
+      <label class="field">
+        <span class="field__label">From</span>
+        <input class="input" name="date_from" type="date" value="{{ filters.date_from }}">
+      </label>
+      <label class="field">
+        <span class="field__label">To</span>
+        <input class="input" name="date_to" type="date" value="{{ filters.date_to }}">
+      </label>
+      <label class="field field--grow">
+        <span class="field__label">Search narration</span>
+        <input class="input" name="q" value="{{ filters.q }}" placeholder="chocolate, lassi…">
+      </label>
+      <button type="submit" class="btn">Apply</button>
+      <a href="/entries" class="btn btn--ghost">Clear</a>
+    </form>
+  </section>
 </div>
 
 <div class="card">
