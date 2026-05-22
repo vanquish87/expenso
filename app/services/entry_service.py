@@ -40,10 +40,12 @@ class EntryService:
                 for r in rows
                 if q_low in r.narration.lower() or q_low in r.category.lower()
             ]
-        # Newest day on top, but inside a day preserve insertion order
-        # (timestamp ASC). Python's sort is stable, so a two-pass sort does it.
-        rows.sort(key=lambda r: r.timestamp)
-        rows.sort(key=lambda r: r.date, reverse=True)
+        # Newest first end-to-end. Timestamps embed dates, so a single
+        # timestamp DESC sort puts the most-recently-added row at the
+        # top — both across days AND within a day. xlsx grows downward
+        # (newest at the bottom of the sheet); the ledger flips that so
+        # the latest entry is what you see first.
+        rows.sort(key=lambda r: r.timestamp, reverse=True)
         return rows
 
     def get(self, entry_id: str) -> Entry:
