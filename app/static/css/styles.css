@@ -485,7 +485,11 @@ body.modal-open { overflow: hidden; }
   .ledger, .ledger tbody, .ledger tr { display: block; }
   .ledger tr {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) auto auto;
+    /* Fixed widths on money + actions so they line up across every card —
+       each <tr> is an independent grid; declaring 'auto' would let each
+       row size col 2 to its own content (Rs 220 vs Rs 1,200) and the
+       column would drift between rows. */
+    grid-template-columns: minmax(0, 1fr) 110px 88px;
     gap: 8px 12px;
     padding: 12px 14px;
     margin: 0 0 8px;
