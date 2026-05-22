@@ -27,12 +27,16 @@
     buttons.forEach((btn) => {
       btn.addEventListener('click', () => {
         const key = btn.dataset.tab;
+        // Click the already-active tab → close it (return to collapsed state).
+        const wasActive = btn.classList.contains('is-active');
         buttons.forEach((b) => {
-          const active = b === btn;
+          const active = b === btn && !wasActive;
           b.classList.toggle('is-active', active);
           b.setAttribute('aria-selected', String(active));
         });
-        panels.forEach((p) => p.classList.toggle('is-active', p.dataset.panel === key));
+        panels.forEach((p) =>
+          p.classList.toggle('is-active', p.dataset.panel === key && !wasActive)
+        );
       });
     });
   });

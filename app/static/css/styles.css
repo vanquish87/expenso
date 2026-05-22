@@ -185,8 +185,10 @@ body {
   transition: color .15s ease, border-color .15s ease, background .15s ease;
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 6px;
   border-radius: 6px 6px 0 0;
+  flex: 1 1 0;  /* split the bar evenly — no empty stretch next to "Filters" */
 }
 .tabs__tab:hover { color: var(--text); background: rgba(255, 255, 255, 0.02); }
 .tabs__tab.is-active {
@@ -197,6 +199,15 @@ body {
 
 .tabs__panel { display: none; }
 .tabs__panel.is-active { display: block; }
+
+/* When neither tab is open, shrink the card body so it doesn't show an
+   empty gap below the bar. Uses :has() to react to the panels' state. */
+.tabs:not(:has(.tabs__panel.is-active)) {
+  padding-bottom: 0;
+}
+.tabs:not(:has(.tabs__panel.is-active)) > .tabs__bar {
+  margin-bottom: 0;
+}
 
 @media (max-width: 500px) {
   .tabs__bar { margin: -12px -12px 12px; padding: 0 4px; }

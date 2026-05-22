@@ -8,11 +8,15 @@
 </section>
 
 {% set filters_active = filters.category or filters.date_from or filters.date_to or filters.q %}
+{# Only auto-activate Add when the page is being re-rendered after a POST
+   validation error (form dict has the user's typed values). Plain GET → both
+   tabs collapsed; user clicks one to open it. #}
+{% set add_active = form.date or form.category or form.narration or form.debit or form.credit %}
 <div class="card tabs">
   <div class="tabs__bar" role="tablist">
-    <button type="button" class="tabs__tab{% if not filters_active %} is-active{% endif %}"
+    <button type="button" class="tabs__tab{% if add_active %} is-active{% endif %}"
             data-tab="add" role="tab"
-            aria-selected="{{ 'false' if filters_active else 'true' }}"
+            aria-selected="{{ 'true' if add_active else 'false' }}"
             aria-controls="tab-panel-add">📝 Add entry</button>
     <button type="button" class="tabs__tab{% if filters_active %} is-active{% endif %}"
             data-tab="filter" role="tab"
@@ -20,7 +24,7 @@
             aria-controls="tab-panel-filter">🔎 Filters{% if filters_active %} <span class="chip chip--soft">active</span>{% endif %}</button>
   </div>
 
-  <section id="tab-panel-add" class="tabs__panel{% if not filters_active %} is-active{% endif %}"
+  <section id="tab-panel-add" class="tabs__panel{% if add_active %} is-active{% endif %}"
            data-panel="add" role="tabpanel" aria-labelledby="tab-add">
     <form class="form form--row form--entry-add" method="post" action="/entries">
       <label class="field">
