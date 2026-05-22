@@ -1,6 +1,8 @@
 """Single shared Jinja2 Templates instance + currency / emoji filters."""
 from __future__ import annotations
 
+from functools import lru_cache
+
 from fastapi.templating import Jinja2Templates
 
 from .core.settings import settings
@@ -233,6 +235,41 @@ def _emoji_for(v) -> str:
     return _DEFAULT_EMOJI
 
 
+@lru_cache(maxsize=1)
+def _category_icon_overrides() -> dict:
+    """Mapping {category_name: icon} for categories that have an explicit
+    user-picked emoji. Cached so we don't re-read the CSV on every render;
+    invalidated by ``invalidate_category_icon_cache()`` whenever a category
+    is created / updated / deleted."""
+    # Late import — repos depend on core.settings which depends on us.
+    from .repositories.category_repo import CategoryCsvRepository
+
+    repo = CategoryCsvRepository()
+    out: dict = {}
+    for c in repo.list():
+        if c.icon:
+            out[c.name] = c.icon
+    return out
+
+
+def invalidate_category_icon_cache() -> None:
+    """Drop the override cache so the next template render picks up the
+    change. Called from CategoryService on create/update/delete."""
+    _category_icon_overrides.cache_clear()
+
+
+def _cat_emoji(v) -> str:
+    """Resolve emoji for a category name, preferring the user-picked icon
+    (from the Category row) over the keyword-matched default."""
+    if v is None:
+        return _DEFAULT_EMOJI
+    name = str(v)
+    override = _category_icon_overrides().get(name)
+    if override:
+        return override
+    return _emoji_for(name)
+
+
 def _kind_emoji(v) -> str:
     """Emoji for an insight `kind` (anomaly / mom / concentration / …)."""
     return _KIND_EMOJI.get(str(v), "💡")
@@ -242,6 +279,7 @@ templates = Jinja2Templates(directory=str(settings.TEMPLATES_DIR))
 templates.env.filters["money"] = _money
 templates.env.filters["intish"] = _intish
 templates.env.filters["money_int"] = _money_int
-templates.env.filters["emoji"] = _emoji_for
+templates.env.filters["emoji"] = _cat_emoji  # prefers user-picked, then keyword
+templates.env.filters["emoji_kw"] = _emoji_for  # raw keyword matcher (no override lookup)
 templates.env.filters["kind_emoji"] = _kind_emoji
 templates.env.globals["currency"] = settings.CURRENCY_SYMBOL

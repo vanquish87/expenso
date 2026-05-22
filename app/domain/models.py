@@ -17,6 +17,9 @@ class Category(BaseModel):
 
     The xlsx uses a 1-level hierarchy: GROUP / MAIN CATEGORY -> SUB-CATEGORY.
     We model both rows as Category with `parent` (= group name) None for groups.
+
+    ``icon`` is an optional explicit emoji override. When set, it wins over the
+    name-based keyword matcher in templating.py. Empty / None → auto-pick.
     """
 
     model_config = ConfigDict(str_strip_whitespace=True)
@@ -24,6 +27,7 @@ class Category(BaseModel):
     id: str = Field(default_factory=_new_id)
     name: str = Field(min_length=1, max_length=80)
     parent: Optional[str] = None
+    icon: Optional[str] = Field(default=None, max_length=16)
 
     @field_validator("name")
     @classmethod
@@ -33,6 +37,14 @@ class Category(BaseModel):
     @field_validator("parent")
     @classmethod
     def _normalise_parent(cls, v: Optional[str]) -> Optional[str]:
+        if v is None:
+            return None
+        v = v.strip()
+        return v or None
+
+    @field_validator("icon")
+    @classmethod
+    def _normalise_icon(cls, v: Optional[str]) -> Optional[str]:
         if v is None:
             return None
         v = v.strip()

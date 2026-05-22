@@ -8,7 +8,7 @@ from ..core.settings import settings
 from ..domain.models import Category
 from .csv_base import CsvRepository
 
-FIELDS = ["id", "name", "parent"]
+FIELDS = ["id", "name", "parent", "icon"]
 
 
 def _row_to_model(row: dict) -> Category:
@@ -16,11 +16,19 @@ def _row_to_model(row: dict) -> Category:
         id=row.get("id") or None,  # type: ignore[arg-type]
         name=row["name"],
         parent=(row.get("parent") or None),
+        # Old CSVs predate this column — DictReader returns no key for it,
+        # row.get(...) gives None, model coerces empty → None too.
+        icon=(row.get("icon") or None),
     )
 
 
 def _model_to_row(c: Category) -> dict:
-    return {"id": c.id, "name": c.name, "parent": c.parent or ""}
+    return {
+        "id": c.id,
+        "name": c.name,
+        "parent": c.parent or "",
+        "icon": c.icon or "",
+    }
 
 
 class CategoryCsvRepository(CsvRepository[Category]):

@@ -35,10 +35,11 @@ def index(
 def create(
     name: str = Form(...),
     parent: Optional[str] = Form(None),
+    icon: Optional[str] = Form(None),
     svc: CategoryService = Depends(get_category_service),
 ):
     try:
-        svc.create(name=name, parent=parent)
+        svc.create(name=name, parent=parent, icon=icon)
     except (ValidationError, ConflictError) as e:
         return RedirectResponse(f"/categories?error={e}", status_code=303)
     return RedirectResponse("/categories?ok=Created", status_code=303)
@@ -49,10 +50,11 @@ def update(
     category_id: str,
     name: str = Form(...),
     parent: Optional[str] = Form(None),
+    icon: Optional[str] = Form(None),
     svc: CategoryService = Depends(get_category_service),
 ):
     try:
-        svc.update(category_id, name=name, parent=parent)
+        svc.update(category_id, name=name, parent=parent, icon=icon)
     except NotFoundError:
         raise HTTPException(status_code=404, detail="category not found")
     except (ValidationError, ConflictError) as e:

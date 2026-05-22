@@ -43,6 +43,11 @@ class ImportService:
         cats = self._read_categories(wb)
         self._categories.replace_all(cats)
 
+        # Importer goes around CategoryService.create, so explicitly drop
+        # the template-side icon override cache.
+        from ..templating import invalidate_category_icon_cache
+        invalidate_category_icon_cache()
+
         valid_names = {c.name for c in cats}
         entries = self._read_entries(wb, valid_names)
         self._entries.replace_all(entries)

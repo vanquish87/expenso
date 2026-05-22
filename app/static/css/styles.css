@@ -339,6 +339,50 @@ input[type="number"] { -moz-appearance: textfield; }
 .cat-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
 .cat-list__item { display: flex; align-items: center; gap: 6px; }
 .cat-emoji { flex: 0 0 auto; font-size: 16px; line-height: 1; width: 20px; text-align: center; }
+
+/* Icon picker: small text input + grid of emoji buttons */
+.input--icon {
+  width: 80px;
+  max-width: 80px;
+  text-align: center;
+  font-size: 18px;
+  letter-spacing: 0;
+  padding: 4px 6px;
+}
+.cat-add-form { position: relative; }
+.icon-palette {
+  flex: 1 1 100%;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 8px;
+  margin-top: 4px;
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  max-height: 120px;
+  overflow-y: auto;
+}
+.icon-palette__btn {
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 18px;
+  line-height: 1;
+  padding: 4px 6px;
+  min-width: 32px;
+  transition: background .12s ease, border-color .12s ease;
+}
+.icon-palette__btn:hover {
+  background: rgba(129, 140, 248, 0.12);
+  border-color: var(--primary);
+}
+.cat-row--group {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+}
 .cat-row { display: flex; gap: 6px; flex: 1; }
 .cat-row .input { flex: 1; }
 

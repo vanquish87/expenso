@@ -6,6 +6,7 @@ from typing import List, Optional
 from ..core.exceptions import ConflictError, NotFoundError, ValidationError
 from ..domain.interfaces import CategoryRepository, EntryRepository
 from ..domain.models import Category
+from ..templating import invalidate_category_icon_cache
 
 
 class CategoryService:
@@ -48,9 +49,10 @@ class CategoryService:
             raise NotFoundError(f"category {category_id} not found")
         return c
 
-    def create(self, name: str, parent: Optional[str]) -> Category:
+    def create(self, name: str, parent: Optional[str], icon: Optional[str] = None) -> Category:
         name = (name or "").strip()
         parent = (parent or "").strip() or None
+        icon = (icon or "").strip() or None
         if not name:
             raise ValidationError("name is required")
         if self._repo.find_by_name(name):
@@ -61,12 +63,21 @@ class CategoryService:
                 raise ValidationError(f"parent '{parent}' does not exist")
             if not p.is_group:
                 raise ValidationError(f"parent '{parent}' is itself a sub-category")
-        return self._repo.add(Category(name=name, parent=parent))
+        c = self._repo.add(Category(name=name, parent=parent, icon=icon))
+        invalidate_category_icon_cache()
+        return c
 
-    def update(self, category_id: str, name: str, parent: Optional[str]) -> Category:
+    def update(
+        self,
+        category_id: str,
+        name: str,
+        parent: Optional[str],
+        icon: Optional[str] = None,
+    ) -> Category:
         existing = self.get(category_id)
         new_name = (name or existing.name).strip()
         new_parent = (parent or "").strip() or None
+        new_icon = (icon or "").strip() or None
 
         if new_name.lower() != existing.name.lower():
             clash = self._repo.find_by_name(new_name)
@@ -85,11 +96,13 @@ class CategoryService:
         if existing.is_group and not new_parent and new_name != existing.name:
             for s in self.sub_categories():
                 if (s.parent or "") == existing.name:
-                    s_new = Category(id=s.id, name=s.name, parent=new_name)
+                    s_new = Category(id=s.id, name=s.name, parent=new_name, icon=s.icon)
                     self._repo.update(s_new)
 
-        updated = Category(id=category_id, name=new_name, parent=new_parent)
-        return self._repo.update(updated)
+        updated = Category(id=category_id, name=new_name, parent=new_parent, icon=new_icon)
+        result = self._repo.update(updated)
+        invalidate_category_icon_cache()
+        return result
 
     def delete(self, category_id: str) -> None:
         existing = self.get(category_id)
@@ -107,3 +120,4 @@ class CategoryService:
                 f"{'ies' if live != 1 else 'y'} reference it"
             )
         self._repo.delete(category_id)
+        invalidate_category_icon_cache()
