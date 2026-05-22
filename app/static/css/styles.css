@@ -354,10 +354,19 @@ input[type="number"] { -moz-appearance: textfield; }
 }
 
 .day {
-  background: var(--surface);
+  /* Bumped one notch (--surface → --surface-2) so the card actually
+     stands out against the AMOLED #000 page background. */
+  background: var(--surface-2);
   border: 1px solid var(--border);
   border-radius: 10px;
   overflow: hidden;
+  transition: background .15s ease, border-color .15s ease;
+}
+.day:hover {
+  /* Card-wide lift when the cursor is anywhere inside it — pairs with the
+     more specific tints on .row__link / .day__head below. */
+  background: #1f1f1f;
+  border-color: #333;
 }
 
 .day__head {
@@ -367,6 +376,12 @@ input[type="number"] { -moz-appearance: textfield; }
   align-items: center;
   padding: 12px 16px;
   border-bottom: 1px solid var(--border);
+  transition: background .15s ease;
+}
+.day__head:hover {
+  /* Distinct from the row's primary-violet hover — a neutral white-tint
+     so it's clear the header is its own region of the card. */
+  background: rgba(255, 255, 255, 0.045);
 }
 
 .day__num {
