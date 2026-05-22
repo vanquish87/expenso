@@ -101,9 +101,11 @@ class EntryService:
         self._repo.delete(entry_id)
 
     def recent(self, n: int = 10) -> List[Entry]:
-        """Most-recently-recorded N entries by timestamp (independent of date).
+        """Top N rows of the ledger view.
 
-        Different from list_all's primary sort: home wants "what got added
-        last", not "what happened latest on the calendar".
+        Deliberately uses the same sort as list_all (date DESC, then xlsx
+        order within day) so the home-page preview mirrors the top of
+        /entries — opening Home and clicking through to Entries should
+        feel like the same list, not two views with the order reversed.
         """
-        return sorted(self._repo.list(), key=lambda r: r.timestamp, reverse=True)[:n]
+        return self.list_all()[:n]
