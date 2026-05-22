@@ -31,7 +31,7 @@
     <li class="budget {% if s.over %}budget--over{% endif %}">
       <div class="budget__head">
         <div>
-          <strong>{{ s.budget.category }}</strong>
+          <strong>{{ s.budget.category | emoji }} {{ s.budget.category }}</strong>
           {% if s.is_group %}<span class="chip chip--soft">group rollup</span>{% endif %}
         </div>
         <div class="muted">{{ s.spend | money }} / {{ s.budget.monthly_cap | money }}</div>

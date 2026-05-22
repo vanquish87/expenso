@@ -130,6 +130,13 @@
     });
   }
 
+  // Same kind -> emoji map the Python `kind_emoji` filter uses on home.html,
+  // so the analytics insights list looks identical.
+  const KIND_EMOJI = {
+    anomaly: '🚨', mom: '📈', concentration: '🎯',
+    runrate: '🔮', weekend: '🎉', biggest: '🏆', empty: '✨',
+  };
+
   function renderInsights(items) {
     const ul = document.getElementById('insights-list');
     if (!ul) return;
@@ -141,7 +148,8 @@
     items.forEach((ins) => {
       const li = document.createElement('li');
       li.className = `insight insight--${ins.kind}`;
-      li.innerHTML = `<div class="insight__title">${escapeHtml(ins.title)}</div><div class="insight__detail">${escapeHtml(ins.detail)}</div>`;
+      const ke = KIND_EMOJI[ins.kind] || '💡';
+      li.innerHTML = `<div class="insight__title">${ke} ${escapeHtml(ins.title)}</div><div class="insight__detail">${escapeHtml(ins.detail)}</div>`;
       ul.appendChild(li);
     });
   }

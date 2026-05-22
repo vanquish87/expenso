@@ -30,7 +30,7 @@
     {% for block in grouped %}
     <section class="cat-group">
       <header class="cat-group__head">
-        <h3>{{ block.group.name }}</h3>
+        <h3>{{ block.group.name | emoji }} {{ block.group.name }}</h3>
         {% if block.group.id %}
         <form class="inline" method="post" action="/categories/{{ block.group.id }}/delete"
               onsubmit="return confirm('Delete group {{ block.group.name }}?');">
@@ -41,6 +41,7 @@
       <ul class="cat-list">
       {% for s in block.subs %}
         <li class="cat-list__item">
+          <span class="cat-emoji" aria-hidden="true">{{ s.name | emoji }}</span>
           <form class="cat-row" method="post" action="/categories/{{ s.id }}/update">
             <input class="input input--sm" name="name" value="{{ s.name }}" required>
             <input class="input input--sm" name="parent" list="parent-groups" autocomplete="off"
