@@ -216,3 +216,22 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# --- expenso project-specific ---
+# Local CSV "database" — runtime data, not source
+data/
+# Env files (in addition to .env already covered above)
+.env.*
+*.env
+
+# IDE / editor scratch
+.vscode/
+.idea/
+
+# OS junk
+Thumbs.db
+.DS_Store
+
+# Source spreadsheet stays on user's Desktop; never commit copies
+*.xlsx
+*.xls
