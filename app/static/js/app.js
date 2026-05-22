@@ -18,6 +18,26 @@
   }
   window.expensoToast = showToast;
 
+  // Hamburger nav (≤1024px): toggle the drawer; close on link click or Escape.
+  const menuBtn = document.getElementById('menu-btn');
+  const nav = document.getElementById('topbar-nav');
+  if (menuBtn && nav) {
+    const close = () => {
+      nav.classList.remove('is-open');
+      menuBtn.setAttribute('aria-expanded', 'false');
+    };
+    menuBtn.addEventListener('click', () => {
+      const open = nav.classList.toggle('is-open');
+      menuBtn.setAttribute('aria-expanded', String(open));
+    });
+    nav.addEventListener('click', (e) => {
+      if (e.target.closest('.navlink')) close();
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && nav.classList.contains('is-open')) close();
+    });
+  }
+
   const btn = document.getElementById('reimport-btn');
   if (btn) {
     btn.addEventListener('click', async () => {

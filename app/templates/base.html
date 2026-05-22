@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="dark">
-  <meta name="theme-color" content="#0f172a">
+  <meta name="theme-color" content="#000000">
   <title>{% block title %}Expenso{% endblock %}</title>
   <link rel="stylesheet" href="/static/css/styles.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js" defer></script>
@@ -15,7 +15,10 @@
       <a href="/" class="brand">💸 Expenso</a>
       <span class="brand__tag">expense tracker</span>
     </div>
-    <nav class="topbar__nav">
+    <button id="menu-btn" class="topbar__menu" type="button"
+            aria-label="Toggle navigation" aria-expanded="false"
+            aria-controls="topbar-nav">☰</button>
+    <nav id="topbar-nav" class="topbar__nav">
       <a href="/" class="navlink" data-route="home">🏠 Home</a>
       <a href="/categories" class="navlink" data-route="categories">🏷️ Categories</a>
       <a href="/entries" class="navlink" data-route="entries">📝 Entries</a>
