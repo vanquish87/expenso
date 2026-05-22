@@ -208,9 +208,60 @@ body {
 .cat-row { display: flex; gap: 6px; flex: 1; }
 .cat-row .input { flex: 1; }
 
-/* entries inline edit */
-.entry-edit { display: contents; }
+/* entries ledger (read-only rows + side actions) */
 .row-actions { display: inline-flex; gap: 6px; align-items: center; }
+.ledger__narr { max-width: 380px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ledger__actions-head { width: 1%; white-space: nowrap; text-align: right; }
+.ledger__actions { white-space: nowrap; text-align: right; display: flex; gap: 6px; justify-content: flex-end; align-items: center; }
+.btn--danger { color: #fda4af; }
+.btn--danger:hover { background: rgba(239,68,68,.18); color: #fecaca; }
+
+/* modal */
+.modal {
+  position: fixed; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  z-index: 50;
+  animation: modal-fade .15s ease-out;
+}
+.modal[hidden] { display: none; }
+.modal__backdrop {
+  position: absolute; inset: 0;
+  background: rgba(5, 10, 24, .72);
+  backdrop-filter: blur(2px);
+}
+.modal__dialog {
+  position: relative;
+  width: min(520px, calc(100% - 32px));
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: 0 20px 60px rgba(0,0,0,.45);
+  padding: 18px 20px 16px;
+  animation: modal-pop .18s ease-out;
+}
+.modal__head {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 12px;
+}
+.modal__head h2 { margin: 0; font-size: 16px; }
+.modal__foot {
+  display: flex; gap: 8px; justify-content: flex-end;
+  margin-top: 16px; padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+.form--stack { display: flex; flex-direction: column; gap: 12px; align-items: stretch; }
+.form--stack .field { min-width: 0; }
+.form__pair { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+body.modal-open { overflow: hidden; }
+
+@keyframes modal-fade {
+  from { opacity: 0; } to { opacity: 1; }
+}
+@keyframes modal-pop {
+  from { opacity: 0; transform: translateY(8px) scale(.98); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
 
 /* budgets */
 .budgets { list-style: none; padding: 0; margin: 0; display: grid; gap: 10px; }
