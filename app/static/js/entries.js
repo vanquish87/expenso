@@ -28,22 +28,21 @@
     if (lastFocus && typeof lastFocus.focus === 'function') lastFocus.focus();
   }
 
-  // Wire up every Edit button — one delegated listener on tbody would also work,
-  // but a per-button listener keeps the data-attribute scoping obvious.
-  document.querySelectorAll('[data-edit-entry]').forEach((btn) => {
-    btn.addEventListener('click', () => {
-      // Row used to be a <tr>; in the new grouped layout it's an <li class="row">.
-      // closest('[data-entry-id]') finds whatever element carries the row data.
-      const row = btn.closest('[data-entry-id]');
-      if (!row) return;
-      openModal(btn, {
-        id:        row.dataset.entryId,
-        date:      row.dataset.date,
-        category:  row.dataset.category,
-        narration: row.dataset.narration,
-        debit:     row.dataset.debit,
-        credit:    row.dataset.credit,
-      });
+  // Event delegation — survives HTMX swapping in fresh rows: the listener
+  // is on document.body, so any [data-edit-entry] that lands in the DOM
+  // (now or later, after an htmx swap of #ledger-root) gets wired for free.
+  document.body.addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-edit-entry]');
+    if (!btn) return;
+    const row = btn.closest('[data-entry-id]');
+    if (!row) return;
+    openModal(btn, {
+      id:        row.dataset.entryId,
+      date:      row.dataset.date,
+      category:  row.dataset.category,
+      narration: row.dataset.narration,
+      debit:     row.dataset.debit,
+      credit:    row.dataset.credit,
     });
   });
 

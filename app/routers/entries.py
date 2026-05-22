@@ -36,6 +36,53 @@ def _parse_money(s: Optional[str]) -> float:
         return 0.0
 
 
+def _is_htmx(request: Request) -> bool:
+    """HTMX sets HX-Request: true on every request it triggers."""
+    return request.headers.get("hx-request", "").lower() == "true"
+
+
+def _render_ledger_root(
+    request: Request,
+    entries_svc: EntryService,
+    *,
+    filters: Optional[Dict[str, Optional[str]]] = None,
+):
+    """Render JUST the #ledger-root partial — used as HTMX response after
+    Add / Delete / Filter so we swap only the ledger, not the whole page."""
+    f = filters or {}
+    rows = entries_svc.list_all(
+        category=(f.get("category") or None),
+        date_from=_parse_date(f.get("date_from")),
+        date_to=_parse_date(f.get("date_to")),
+        q=(f.get("q") or None),
+    )
+    return templates.TemplateResponse(
+        "partials/_ledger_root.html",
+        {"request": request, "rows": rows},
+    )
+
+
+def _render_add_form(
+    request: Request,
+    cats_svc: CategoryService,
+    *,
+    form: Optional[Dict[str, Any]] = None,
+    inline_error: Optional[str] = None,
+):
+    """Render JUST the Add-entry form partial — used as HTMX response on
+    validation error so the form re-renders in place with values + banner."""
+    return templates.TemplateResponse(
+        "partials/_add_form.html",
+        {
+            "request": request,
+            "categories": cats_svc.list_all(),
+            "today": _date.today().isoformat(),
+            "form": form or {},
+            "inline_error": inline_error,
+        },
+    )
+
+
 def _humanize_error(e: Exception) -> str:
     """One-line, user-friendly message out of any exception we may raise.
 
@@ -115,11 +162,15 @@ def index(
     entries: EntryService = Depends(get_entry_service),
     cats: CategoryService = Depends(get_category_service),
 ):
+    filters = {"category": category, "date_from": date_from, "date_to": date_to, "q": q}
+    # HTMX request → just the ledger partial (filter form swaps it in).
+    if _is_htmx(request):
+        return _render_ledger_root(request, entries, filters=filters)
     return _render_entries(
         request, entries, cats,
         error=request.query_params.get("error"),
         ok=request.query_params.get("ok"),
-        filters={"category": category, "date_from": date_from, "date_to": date_to, "q": q},
+        filters=filters,
     )
 
 
@@ -141,9 +192,23 @@ def create(
         "debit": debit,
         "credit": credit,
     }
+    htmx = _is_htmx(request)
+
+    def _error_response(msg: str):
+        # HTMX → swap the Add-form partial (with banner + values).
+        # Non-HTMX → re-render the full page with values preserved.
+        if htmx:
+            resp = _render_add_form(request, cats, form=form, inline_error=msg)
+            # The form's hx-target is #ledger-root for success; on error
+            # tell HTMX to swap the form's own wrapper instead.
+            resp.headers["HX-Retarget"] = "#entry-add-form-wrap"
+            resp.headers["HX-Reswap"] = "outerHTML"
+            return resp
+        return _render_entries(request, svc, cats, error=msg, form=form)
+
     d = _parse_date(date)
     if d is None:
-        return _render_entries(request, svc, cats, error="Invalid date", form=form)
+        return _error_response("Invalid date")
     try:
         svc.create(
             date_=d,
@@ -153,7 +218,11 @@ def create(
             credit=_parse_money(credit),
         )
     except Exception as e:
-        return _render_entries(request, svc, cats, error=_humanize_error(e), form=form)
+        return _error_response(_humanize_error(e))
+
+    # Success
+    if htmx:
+        return _render_ledger_root(request, svc)
     return RedirectResponse("/entries?ok=Created", status_code=303)
 
 
@@ -194,6 +263,7 @@ def update(
 
 @router.post("/{entry_id}/delete", name="entries.delete")
 def delete(
+    request: Request,
     entry_id: str,
     svc: EntryService = Depends(get_entry_service),
 ):
@@ -201,4 +271,6 @@ def delete(
         svc.delete(entry_id)
     except NotFoundError:
         raise HTTPException(status_code=404, detail="entry not found")
+    if _is_htmx(request):
+        return _render_ledger_root(request, svc)
     return RedirectResponse("/entries?ok=Deleted", status_code=303)

@@ -26,39 +26,17 @@
 
   <section id="tab-panel-add" class="tabs__panel{% if add_active %} is-active{% endif %}"
            data-panel="add" role="tabpanel" aria-labelledby="tab-add">
-    <form class="form form--row form--entry-add" method="post" action="/entries">
-      <label class="field">
-        <span class="field__label">Date</span>
-        <input class="input" name="date" type="date" value="{{ form.date or today }}" required>
-      </label>
-      <label class="field">
-        <span class="field__label">Category</span>
-        <input class="input" name="category" list="all-categories" autocomplete="off"
-               value="{{ form.category or '' }}" placeholder="e.g. electronics" required>
-      </label>
-      <label class="field field--grow">
-        <span class="field__label">Narration</span>
-        <input class="input" name="narration" maxlength="200"
-               value="{{ form.narration or '' }}" placeholder="e.g. chocolate, lassi…">
-      </label>
-      <label class="field field--narrow">
-        <span class="field__label">Debit</span>
-        <input class="input num" name="debit" type="number" step="1" min="0"
-               value="{{ form.debit or '' }}" placeholder="0">
-      </label>
-      <label class="field field--narrow">
-        <span class="field__label">Credit</span>
-        <input class="input num" name="credit" type="number" step="1" min="0"
-               value="{{ form.credit or '' }}" placeholder="0">
-      </label>
-      <button type="submit" class="btn btn--primary">Add</button>
-    </form>
-    <p class="muted hint">Leave one blank (or 0) and fill the other.</p>
+    {% include "partials/_add_form.html" %}
   </section>
 
   <section id="tab-panel-filter" class="tabs__panel{% if filters_active %} is-active{% endif %}"
            data-panel="filter" role="tabpanel" aria-labelledby="tab-filter">
-    <form class="form form--row form--entry-filter" method="get" action="/entries">
+    <form class="form form--row form--entry-filter"
+          method="get" action="/entries"
+          hx-get="/entries"
+          hx-target="#ledger-root"
+          hx-swap="innerHTML"
+          hx-push-url="true">
       <label class="field">
         <span class="field__label">Category</span>
         <input class="input" name="category" list="all-categories" autocomplete="off"
@@ -77,63 +55,20 @@
         <input class="input" name="q" value="{{ filters.q }}" placeholder="chocolate, lassi…">
       </label>
       <button type="submit" class="btn">Apply</button>
-      <a href="/entries" class="btn btn--ghost">Clear</a>
+      <a href="/entries" class="btn btn--ghost"
+         hx-get="/entries"
+         hx-target="#ledger-root"
+         hx-swap="innerHTML"
+         hx-push-url="true"
+         onclick="this.closest('form').reset()">Clear</a>
     </form>
   </section>
 </div>
 
 <div class="card">
-  <header class="card__head">
-    <h2>Ledger ({{ rows | length }})</h2>
-  </header>
-  {% if rows %}
-  <div class="ledger">
-    {# rows arrive sorted timestamp DESC. Jinja's groupby is a stable sort
-       on `date`, so within-date order (timestamp DESC) is preserved. The
-       `| reverse` puts newest dates on top. #}
-    {% for date_, group in rows | groupby('date') | reverse %}
-    {% set day_net = (group | sum(attribute='credit')) - (group | sum(attribute='debit')) %}
-    <article class="day">
-      <header class="day__head">
-        <div class="day__num">{{ date_.day }}</div>
-        <div class="day__meta">
-          <div class="day__weekday">{{ date_.strftime('%A') }}</div>
-          <div class="day__month">{{ date_.strftime('%B %Y') }}</div>
-        </div>
-        <div class="day__total{% if day_net > 0 %} is-credit{% endif %}">{{ day_net | intish }}</div>
-      </header>
-      <ul class="day__entries">
-        {% for e in group %}
-        <li class="row"
-            data-entry-id="{{ e.id }}"
-            data-date="{{ e.date.isoformat() }}"
-            data-category="{{ e.category }}"
-            data-narration="{{ e.narration }}"
-            data-debit="{{ e.debit | intish }}"
-            data-credit="{{ e.credit | intish }}">
-          <div class="row__icon" aria-hidden="true">{{ e.category | emoji }}</div>
-          <div class="row__body">
-            <div class="row__cat">{{ e.category }}</div>
-            {% if e.narration %}<div class="row__narr">{{ e.narration }}</div>{% endif %}
-          </div>
-          <div class="row__amount {% if e.debit > 0 %}is-debit{% else %}is-credit{% endif %}">
-            {% if e.debit > 0 %}{{ e.debit | intish }}{% else %}{{ e.credit | intish }}{% endif %}
-          </div>
-          <div class="row__actions">
-            <button class="btn btn--sm btn--icon" type="button" data-edit-entry title="Edit" aria-label="Edit">✎</button>
-            <form class="inline" method="post" action="/entries/{{ e.id }}/delete" onsubmit="return confirm('Delete this entry?');">
-              <button class="btn btn--ghost btn--sm btn--icon btn--danger" type="submit" title="Delete" aria-label="Delete">🗑</button>
-            </form>
-          </div>
-        </li>
-        {% endfor %}
-      </ul>
-    </article>
-    {% endfor %}
+  <div id="ledger-root">
+    {% include "partials/_ledger_root.html" %}
   </div>
-  {% else %}
-    <p class="empty">No entries match.</p>
-  {% endif %}
 </div>
 
 <!-- Edit modal (one shared instance; populated by JS from the clicked row) -->
