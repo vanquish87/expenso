@@ -389,6 +389,78 @@ body.modal-open { overflow: hidden; }
   }
   .topbar__nav.is-open { display: flex; }
   .navlink { padding: 10px 12px; font-size: 14px; }
+
+  /* Add-entry form: explicit 3-line layout.
+     Row 1 = Date + Category   |   Row 2 = Narration   |   Row 3 = Debit + Credit + Add
+     grid-template-columns: 1fr 1fr auto so Add button stays compact in col 3. */
+  .form--entry-add {
+    display: grid;
+    grid-template-columns: 1fr 1fr auto;
+    gap: 10px;
+    align-items: end;
+  }
+  .form--entry-add > :nth-child(1) { grid-column: 1;     grid-row: 1; }  /* date */
+  .form--entry-add > :nth-child(2) { grid-column: 2 / 4; grid-row: 1; }  /* category */
+  .form--entry-add > :nth-child(3) { grid-column: 1 / 4; grid-row: 2; }  /* narration */
+  .form--entry-add > :nth-child(4) { grid-column: 1;     grid-row: 3; }  /* debit */
+  .form--entry-add > :nth-child(5) { grid-column: 2;     grid-row: 3; }  /* credit */
+  .form--entry-add > :nth-child(6) { grid-column: 3;     grid-row: 3; }  /* Add button */
+  .form--entry-add .field--narrow { min-width: 0; max-width: none; }
+
+  /* Filter: 4-line layout, cleanly stacked.
+     Row 1 = Category (full)
+     Row 2 = From + To
+     Row 3 = Search narration (full)
+     Row 4 = Apply + Clear */
+  .form--entry-filter {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    align-items: end;
+  }
+  .form--entry-filter > :nth-child(1) { grid-column: 1 / 3; grid-row: 1; }  /* category */
+  .form--entry-filter > :nth-child(2) { grid-column: 1;     grid-row: 2; }  /* from */
+  .form--entry-filter > :nth-child(3) { grid-column: 2;     grid-row: 2; }  /* to */
+  .form--entry-filter > :nth-child(4) { grid-column: 1 / 3; grid-row: 3; }  /* search */
+  .form--entry-filter > :nth-child(5) { grid-column: 1;     grid-row: 4; }  /* apply */
+  .form--entry-filter > :nth-child(6) { grid-column: 2;     grid-row: 4; justify-self: stretch; }  /* clear */
+
+  /* Ledger table → stacked card list. Each row turns into its own card:
+       header row  : date + category chip
+       middle row  : narration (full width, wraps freely)
+       footer row  : debit + credit + ✎🗑 actions
+     No more horizontal scroll on narrow viewports — every row fits inside
+     the card container. */
+  .ledger thead { display: none; }
+  .ledger, .ledger tbody, .ledger tr { display: block; }
+  .ledger tr {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 6px 12px;
+    padding: 12px;
+    margin: 0 0 8px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--surface-2);
+  }
+  .ledger td { display: block; padding: 0; border: 0; line-height: 1.4; }
+  /* Row 1 of the card */
+  .ledger td:nth-child(1) { grid-column: 1;     grid-row: 1; color: var(--text-dim); font-size: 13px; align-self: center; }
+  .ledger td:nth-child(2) { grid-column: 2 / 4; grid-row: 1; justify-self: end; }
+  /* Row 2: narration spans full width */
+  .ledger td:nth-child(3) { grid-column: 1 / 4; grid-row: 2; font-size: 14px; }
+  /* Row 3: debit | credit | actions */
+  .ledger td:nth-child(4) { grid-column: 1;     grid-row: 3; text-align: left; }
+  .ledger td:nth-child(5) { grid-column: 2;     grid-row: 3; text-align: left; }
+  .ledger td:nth-child(6) { grid-column: 3;     grid-row: 3; justify-self: end; align-self: center; }
+  /* Inline tiny labels so DEBIT / CREDIT aren't context-less without the thead. */
+  .ledger td:nth-child(4)::before,
+  .ledger td:nth-child(5)::before {
+    color: var(--muted); font-size: 10px; letter-spacing: .6px; margin-right: 6px;
+  }
+  .ledger td:nth-child(4)::before { content: "DEBIT"; }
+  .ledger td:nth-child(5)::before { content: "CREDIT"; }
+  .ledger__narr { min-width: 0; }
 }
 
 @media (max-width: 800px) {

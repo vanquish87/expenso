@@ -9,7 +9,7 @@
 
 <div class="card">
   <header class="card__head"><h2>Add entry</h2></header>
-  <form class="form form--row" method="post" action="/entries">
+  <form class="form form--row form--entry-add" method="post" action="/entries">
     <label class="field">
       <span class="field__label">Date</span>
       <input class="input" name="date" type="date" value="{{ form.date or today }}" required>
@@ -41,7 +41,7 @@
 
 <div class="card">
   <header class="card__head"><h2>Filters</h2></header>
-  <form class="form form--row" method="get" action="/entries">
+  <form class="form form--row form--entry-filter" method="get" action="/entries">
     <label class="field">
       <span class="field__label">Category</span>
       <input class="input" name="category" list="all-categories" autocomplete="off"
