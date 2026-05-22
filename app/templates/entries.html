@@ -7,7 +7,9 @@
   <p class="hero__sub">Each row is one debit or credit — exactly the same shape as the source spreadsheet.</p>
 </section>
 
-<details class="card card--collapsible" open>
+{% set filters_active = filters.category or filters.date_from or filters.date_to or filters.q %}
+<div class="entries-tabs">
+<details name="entries-tabs" class="card card--collapsible card--tab"{% if not filters_active %} open{% endif %}>
   <summary class="card__head"><h2>Add entry</h2><span class="card__caret" aria-hidden="true">▾</span></summary>
   <form class="form form--row form--entry-add" method="post" action="/entries">
     <label class="field">
@@ -39,8 +41,7 @@
   <p class="muted hint">Leave one blank (or 0) and fill the other.</p>
 </details>
 
-{% set filters_active = filters.category or filters.date_from or filters.date_to or filters.q %}
-<details class="card card--collapsible"{% if filters_active %} open{% endif %}>
+<details name="entries-tabs" class="card card--collapsible card--tab"{% if filters_active %} open{% endif %}>
   <summary class="card__head"><h2>Filters{% if filters_active %} <span class="chip chip--soft">active</span>{% endif %}</h2><span class="card__caret" aria-hidden="true">▾</span></summary>
   <form class="form form--row form--entry-filter" method="get" action="/entries">
     <label class="field">
@@ -64,6 +65,7 @@
     <a href="/entries" class="btn btn--ghost">Clear</a>
   </form>
 </details>
+</div>
 
 <div class="card">
   <header class="card__head">

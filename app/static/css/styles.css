@@ -162,6 +162,29 @@ body {
 }
 .card--collapsible[open] > summary .card__caret { transform: rotate(180deg); }
 
+/* Side-by-side carousel: Add entry | Filters — only one open at a time
+   (native via <details name="entries-tabs"> on modern browsers). The open
+   one grows to fill the row, the closed one shrinks to its summary width. */
+.entries-tabs {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  margin-bottom: 16px;
+}
+.entries-tabs > .card--tab {
+  margin-bottom: 0;   /* the container handles spacing now */
+  min-width: 0;
+  transition: flex .25s ease;
+}
+.entries-tabs > .card--tab:not([open]) { flex: 0 1 auto; }
+.entries-tabs > .card--tab[open]       { flex: 1 1 100%; }
+
+/* Stack vertically when there's no room for a side-by-side row. */
+@media (max-width: 600px) {
+  .entries-tabs { flex-direction: column; }
+  .entries-tabs > .card--tab { width: 100%; }
+}
+
 /* tables */
 .table { width: 100%; border-collapse: collapse; }
 .table th, .table td {
