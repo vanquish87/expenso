@@ -81,8 +81,8 @@
         data-date="{{ e.date.isoformat() }}"
         data-category="{{ e.category }}"
         data-narration="{{ e.narration }}"
-        data-debit="{{ '%.2f' % e.debit }}"
-        data-credit="{{ '%.2f' % e.credit }}">
+        data-debit="{{ e.debit | intish }}"
+        data-credit="{{ e.credit | intish }}">
         <td>{{ e.date.isoformat() }}</td>
         <td><span class="chip">{{ e.category }}</span></td>
         <td class="ledger__narr">{{ e.narration or "—" }}</td>

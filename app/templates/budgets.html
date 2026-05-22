@@ -41,7 +41,7 @@
         <span>{{ s.pct }}%</span>
         <span class="muted">{{ s.remaining | money }} remaining</span>
         <form class="inline" method="post" action="/budgets/{{ s.budget.id }}/update">
-          <input class="input input--sm num" name="monthly_cap" type="number" step="1" min="1" value="{{ s.budget.monthly_cap | round(0, 'common') | int }}">
+          <input class="input input--sm num" name="monthly_cap" type="number" step="1" min="1" value="{{ s.budget.monthly_cap | intish }}">
           <button class="btn btn--sm" type="submit">Save</button>
         </form>
         <form class="inline" method="post" action="/budgets/{{ s.budget.id }}/delete" onsubmit="return confirm('Delete budget?');">
