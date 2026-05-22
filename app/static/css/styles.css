@@ -18,7 +18,10 @@
 }
 
 * { box-sizing: border-box; }
-html, body { height: 100%; }
+/* Tells the browser to render native widgets (scrollbars, date picker chrome,
+   form-control defaults) in their dark variant — matches our palette. */
+html { color-scheme: dark; }
+html, body { height: 100%; max-width: 100%; }
 body {
   margin: 0;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
@@ -28,6 +31,17 @@ body {
               radial-gradient(900px 500px at 110% -100px, rgba(34,211,238,.10), transparent 60%),
               var(--bg);
   line-height: 1.5;
+  /* Safety: a child element forcing extra width should NOT push the page
+     wider than the viewport — it'll scroll inside its own container instead. */
+  overflow-x: hidden;
+}
+
+/* Wrap any table that may overflow inside this — gives it its own horizontal
+   scroll inside the card instead of bleeding the whole page. */
+.table-wrap {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 /* layout */
@@ -328,9 +342,45 @@ body.modal-open { overflow: hidden; }
 .insight--biggest { border-left: 3px solid #f472b6; }
 
 /* responsive */
+@media (max-width: 1024px) {
+  /* Narration was hogging 360px; shrink so neighbour columns stop wrapping. */
+  .ledger__narr { min-width: 220px; }
+  .container { padding: 0 16px; }
+}
+
+@media (max-width: 800px) {
+  /* Top bar lets nav drop to its own row before clipping the brand. */
+  .topbar { flex-wrap: wrap; gap: 12px; padding: 10px 16px; }
+  .topbar__nav { order: 3; flex-basis: 100%; flex-wrap: wrap; }
+  .navlink { padding: 5px 10px; font-size: 13px; }
+  .brand__tag { display: none; }
+  .ledger__narr { min-width: 180px; line-height: 1.35; }
+  .field { min-width: 130px; }
+  .field--narrow { min-width: 90px; max-width: 130px; }
+  /* Smaller table cells, tabular-num-tight so "Rs 1,200" doesn't wrap. */
+  .table th, .table td { padding: 6px 8px; font-size: 13px; }
+  .num { white-space: nowrap; }
+}
+
 @media (max-width: 640px) {
-  .topbar { padding: 10px 12px; gap: 12px; }
+  .topbar { padding: 10px 12px; gap: 10px; }
   .container { padding: 0 12px; }
   .form { gap: 8px; }
   .field { min-width: 120px; }
+  .ledger__narr { min-width: 140px; }
+  /* On very narrow screens the chip + emoji can wrap; allow it. */
+  .chip { white-space: normal; word-break: break-word; }
+  .kpi { padding: 10px 12px; }
+  .kpi__value { font-size: 17px; }
+  /* Cards lose chunky padding on tiny screens. */
+  .card { padding: 12px; }
+  .card__head h2 { font-size: 15px; }
+}
+
+@media (max-width: 420px) {
+  .topbar__brand { gap: 4px; }
+  .brand { font-size: 16px; }
+  .navlink { padding: 4px 8px; font-size: 12px; }
+  .btn { padding: 6px 10px; font-size: 13px; }
+  .btn--sm { padding: 3px 7px; }
 }
