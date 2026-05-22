@@ -2,7 +2,8 @@
 
 A friendly little expense tracker that turns your **Expense_Tracker_FY2026-27.xlsx**
 into a real web app — same columns (Date · Category · Narration · Debit · Credit),
-plus charts, budgets, and a dashboard that actually tells you stuff. 🪄
+plus a date-grouped ledger, charts, budgets, and a dashboard that actually tells
+you stuff. 🪄
 
 No database to install. No cloud account. Your data lives in plain **CSV files**
 on your computer, so you can open them in Excel any time. 📂
@@ -28,10 +29,35 @@ the black window to stop.
 | Where | What you can do |
 | --- | --- |
 | 🏠 **Home** | Quick KPIs + your latest entries + smart insights |
-| 🏷️ **Categories** | Make groups and sub-categories — add, rename, delete |
-| 📝 **Entries** | Add a spend or income, filter by date / category / text |
+| 🏷️ **Categories** | Groups + sub-categories with **per-category icon picker** 🎨 |
+| 📝 **Entries** | Day-grouped ledger; tap a row → detail modal with edit / delete |
 | 🎯 **Budgets** | Set a monthly cap per category — see how close you are |
-| 📊 **Analytics** | Fancy dashboard: doughnuts, lines, bars, top spends, insights |
+| 📊 **Analytics** | Chart.js dashboard: doughnuts, lines, bars, top spends, insights |
+
+---
+
+## ✨ Things that make it pleasant to use
+
+- 📅 **Day-grouped ledger** — entries cluster under a date header showing the
+  day's net (`-1,629`), with a circular emoji icon on every row.
+- 👆 **Tap a row → detail modal** — click any ledger row, the whole entry
+  pops up cleanly. Pencil ✎ flips it into an inline **edit form** without
+  leaving the modal; Save/Cancel flip back. 🗑 deletes (with confirm).
+- ⚡ **HTMX makes it snappy** — Add entry, Filter, Delete, Edit all update
+  the ledger **in place**, no full page reload, no scroll jump.
+- 🎨 **Pick any emoji per category** — on `/categories`, click the
+  circular icon next to a name → grid of ~80 emojis pops up → pick one.
+  Auto-detection still works (a `GROCERIES` category guesses 🛒) so you
+  only customise when you want to.
+- 🧠 **Auto-icons get clever** — `GROCERIES - L1 - BASIC` → 🥖,
+  `GROCERIES - L2 - MUNCH` → 🍿, `RESTAURANTS - L3 - LAVISH` → 🥂,
+  `BILLO'S POCKET` → 👛, …
+- 📱 **Mobile / iPad ready** — at ≤ 1024 px the nav becomes a ☰ drawer,
+  the entries form collapses into a tabbed card (Add / Filters), the
+  ledger turns into stacked cards. AMOLED-friendly pure-black palette.
+- 💾 **Your data, your folder** — point `EXPENSO_DATA_DIR` at any drive
+  (external SSD, Dropbox, …) via `.env`. The CSV files themselves are
+  **never deleted** by the app, only ever rewritten atomically.
 
 ---
 
@@ -56,18 +82,21 @@ Three little CSV files inside `data/`:
 
 ```
 data/
-├── categories.csv   ← your groups + sub-categories
-├── entries.csv      ← every Date · Category · Narration · Debit · Credit row
-└── budgets.csv      ← monthly caps you've set
+├── categories.csv   ← id, name, parent, icon
+├── entries.csv      ← id, date, timestamp, category, narration, debit, credit
+└── budgets.csv      ← id, category, monthly_cap
 ```
 
+Each entry carries a **timestamp** alongside its date, so the ledger sorts
+deterministically — newest entries on top within each day, no random shuffle.
 Want to back up? Copy that folder. Want to start over? Delete it — the app
 re-seeds from your spreadsheet on the next run. 🌱
 
-> 🤓 *For the curious:* writes are atomic (tempfile + rename), so even if your
-> laptop crashes mid-save, the previous file is intact. Concurrent edits are
-> safe too — there's a lock around every write. The CSV files themselves are
-> **never deleted** by the app — rows come and go, the durable file stays.
+> 🤓 *For the curious:* writes are atomic (tempfile + rename), so even if
+> your laptop crashes mid-save, the previous file is intact. Concurrent
+> edits are safe too — there's a lock around every write. The CSV files
+> themselves are **never deleted** by the app — rows come and go, the
+> durable file stays.
 
 ### 📍 Point data anywhere with `.env`
 
@@ -103,25 +132,41 @@ projection, biggest transaction — all match. 💯
 
 ---
 
-## 🏗️ How it's built (for the curious dev)
+## 🛠️ Tech stack (for the curious dev)
+
+Everything ships from one folder. No npm. No build step. Refresh-and-go.
+
+| Layer | Choice | Why |
+| --- | --- | --- |
+| 🐍 Backend | FastAPI + uvicorn | Fast, type-checked, batteries-included |
+| 📦 Models | Pydantic v2 | Validates the wire and on-disk shape |
+| 🎨 Templates | Jinja2 | Server-rendered HTML, no SPA tax |
+| ⚡ Interactivity | **HTMX 2** (CDN) | In-place updates without a framework |
+| 📊 Charts | **Chart.js 4** (CDN) | The analytics dashboard |
+| 🎨 Icons | **Native emoji** 🛒🍽️🚖 | Zero asset shipping, OS-rendered |
+| 💅 Styles | Hand-written CSS | ~700 lines, custom properties, no Tailwind |
+| 📑 Workbook | openpyxl | Reads your xlsx for the seed importer |
+| 💾 Storage | Plain CSV files | Open in Excel, grep with the terminal |
+
+---
+
+## 🏗️ How it's built
 
 ```
 app/
-├── core/          ⚙️  settings + custom exceptions
+├── core/          ⚙️  settings (loads .env) + custom exceptions
 ├── domain/        📦  Pydantic models + Repository Protocols
 ├── repositories/  💾  CSV repos (atomic writes + thread lock)
 ├── services/      🧠  business logic (one job per file)
-├── routers/       🌐  FastAPI controllers (thin)
+├── routers/       🌐  FastAPI controllers — thin, HTMX-aware
 ├── templates/     🎨  Jinja HTML
-└── static/        💅  CSS + vanilla JS + Chart.js (CDN)
+│   └── partials/  🧩  fragments returned to HTMX (ledger, add form)
+└── static/        💅  CSS + vanilla JS + Chart.js / HTMX (via CDN)
 ```
 
-- **FastAPI + uvicorn** server 🐍
-- **Pydantic v2** for models
-- **Jinja2** templates with a dark UI
-- **Chart.js** for the dashboard
-- **CSV** for storage (swap to SQLite later by writing one new repo class — the
-  rest of the app won't notice 🪄)
+Services depend only on the **Repository Protocols** in `app/domain/interfaces.py`,
+so swapping CSV → SQLite is a single new repo class away — the rest of the
+app won't notice. 🪄
 
 ---
 
@@ -133,5 +178,9 @@ app/
   Point elsewhere via `EXPENSO_SOURCE_XLSX=...`
 - 🛡️ Default host is `127.0.0.1` (your laptop only — not exposed to the network).
   Override with `EXPENSO_HOST` / `EXPENSO_PORT` if you want.
+- 🌑 Pure-black AMOLED palette by default; the browser's native widgets
+  (date picker, scrollbars) also render dark via `color-scheme: dark`.
+- ♻️ HTMX is **optional** — the app works with JS disabled too. Forms
+  fall back to plain POST + 303 redirects.
 
 Happy tracking! 🪙✨
