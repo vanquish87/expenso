@@ -525,3 +525,85 @@ body.modal-open { overflow: hidden; }
   .btn { padding: 6px 10px; font-size: 13px; }
   .btn--sm { padding: 3px 7px; }
 }
+
+/* =========================================================================
+   Hover system — subtle "this is interactive" feedback across the app.
+
+   The pattern:
+    - Lists of rows that have inline actions (ledger, budgets, sub-cats) get
+      a primary-tinted bg on hover so the row "lights up" as the cursor
+      tracks down the list.
+    - Stat / informational cards (KPIs, insights) get a quieter feedback
+      (border tint or faint bg) so they feel alive but don't pretend to be
+      clickable.
+    - All transitions are .15s so the effect feels light, not draggy.
+   ========================================================================= */
+
+/* Table-mode ledger / home recent: row gets a faint primary tint */
+.table tbody tr {
+  transition: background .15s ease;
+}
+.table tbody tr:hover {
+  background: rgba(129, 140, 248, 0.07);
+}
+
+/* Card-mode ledger (≤1024px) — stronger feedback because the row IS a card
+   and has visible Edit / Delete actions inside it. */
+@media (max-width: 1024px) {
+  .ledger tr {
+    transition: background .15s ease, border-color .15s ease, box-shadow .15s ease;
+  }
+  .ledger tr:hover {
+    background: rgba(129, 140, 248, 0.10);
+    border-color: var(--primary);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5);
+  }
+}
+
+/* Budget items — primary tint on hover, except the over-budget ones keep
+   their red border (still subtly background-shifted). */
+.budget {
+  transition: background .15s ease, border-color .15s ease;
+}
+.budget:hover {
+  background: rgba(129, 140, 248, 0.07);
+  border-color: var(--primary);
+}
+.budget--over:hover {
+  border-color: rgba(239, 68, 68, .8);
+  background: rgba(239, 68, 68, 0.06);
+}
+
+/* Categories sub-cat list rows */
+.cat-list__item {
+  border-radius: 6px;
+  transition: background .15s ease;
+}
+.cat-list__item:hover {
+  background: rgba(129, 140, 248, 0.06);
+}
+
+/* Category group cards — slight border lift since the whole group block
+   is a visual container, not directly clickable. */
+.cat-group {
+  transition: border-color .15s ease;
+}
+.cat-group:hover {
+  border-color: #333;
+}
+
+/* Insights — faint bg shift so the eye knows "you're reading this one". */
+.insight {
+  transition: background .15s ease;
+}
+.insight:hover {
+  background: rgba(255, 255, 255, 0.025);
+}
+
+/* KPI cards — just a quiet border tint. They're stats, not actions. */
+.kpi {
+  transition: border-color .15s ease;
+}
+.kpi:hover {
+  border-color: #383838;
+}
