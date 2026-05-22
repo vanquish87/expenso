@@ -71,55 +71,10 @@
   </div>
 </div>
 
-<!-- Edit modal (one shared instance; populated by JS from the clicked row) -->
-<div id="entry-edit-modal" class="modal" hidden aria-hidden="true">
-  <div class="modal__backdrop" data-modal-close></div>
-  <div class="modal__dialog" role="dialog" aria-labelledby="entry-edit-title" aria-modal="true">
-    <header class="modal__head">
-      <h2 id="entry-edit-title">Edit entry</h2>
-      <button class="btn btn--ghost btn--sm" type="button" data-modal-close aria-label="Close">×</button>
-    </header>
-    <form id="entry-edit-form" class="form form--stack" method="post" action="">
-      <label class="field">
-        <span class="field__label">Date</span>
-        <input class="input" name="date" type="date" required>
-      </label>
-      <label class="field">
-        <span class="field__label">Category</span>
-        <input class="input" name="category" list="all-categories" autocomplete="off"
-               placeholder="e.g. electronics" required>
-      </label>
-      <label class="field">
-        <span class="field__label">Narration</span>
-        <input class="input" name="narration" maxlength="200" placeholder="e.g. chocolate, lassi…">
-      </label>
-      <div class="form__pair">
-        <label class="field">
-          <span class="field__label">Debit</span>
-          <input class="input num" name="debit" type="number" step="1" min="0" placeholder="0">
-        </label>
-        <label class="field">
-          <span class="field__label">Credit</span>
-          <input class="input num" name="credit" type="number" step="1" min="0" placeholder="0">
-        </label>
-      </div>
-      <p class="muted hint">Leave one blank (or 0) and fill the other.</p>
-      <footer class="modal__foot">
-        <button type="button" class="btn btn--ghost" data-modal-close>Cancel</button>
-        <button type="submit" class="btn btn--primary">Save changes</button>
-      </footer>
-    </form>
-  </div>
-</div>
-
 <!-- Shared category typeahead source: value = category, label = parent group (or "group"). -->
 <datalist id="all-categories">
   {% for c in categories %}
     <option value="{{ c.name }}">{% if c.parent %}{{ c.parent }}{% else %}group{% endif %}</option>
   {% endfor %}
 </datalist>
-{% endblock %}
-
-{% block scripts %}
-<script src="/static/js/entries.js" defer></script>
 {% endblock %}

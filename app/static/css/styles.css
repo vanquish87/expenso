@@ -391,13 +391,27 @@ input[type="number"] { -moz-appearance: textfield; }
 .day__entries { list-style: none; margin: 0; padding: 0; }
 
 .row {
+  /* The <li> only carries the row's divider; layout / hover lives on the
+     inner <a class="row__link"> below. */
+  border-top: 1px solid var(--border);
+}
+.day__entries > .row:first-child { border-top: 0; }
+
+.row__link {
   display: grid;
-  grid-template-columns: 44px minmax(0, 1fr) auto auto;
-  gap: 4px 12px;
+  grid-template-columns: 44px minmax(0, 1fr) 100px;
+  gap: 4px 14px;
   padding: 10px 16px;
   align-items: center;
-  border-top: 1px solid var(--border);
+  text-decoration: none;
+  color: inherit;
   transition: background .15s ease;
+}
+.row__link:hover  { background: rgba(129, 140, 248, 0.08); }
+.row__link:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: -2px;
+  border-radius: 6px;
 }
 
 .row__icon {
@@ -434,11 +448,11 @@ input[type="number"] { -moz-appearance: textfield; }
   font-weight: 600;
   white-space: nowrap;
   font-variant-numeric: tabular-nums;
+  /* Fixed col-width on the grid (100px) + default text-align:left means
+     "₹ 220" / "₹ 1,200" all start at the same x position across cards. */
 }
 .row__amount.is-debit  { color: #fda4af; }
 .row__amount.is-credit { color: #6ee7b7; }
-
-.row__actions { display: flex; gap: 4px; align-items: center; }
 
 .btn--danger { color: #fda4af; }
 .btn--danger:hover { background: rgba(239,68,68,.18); color: #fecaca; }
@@ -446,10 +460,109 @@ input[type="number"] { -moz-appearance: textfield; }
 @media (max-width: 500px) {
   .day__head { padding: 10px 12px; grid-template-columns: 40px 1fr auto; }
   .day__num  { font-size: 24px; }
-  .row { padding: 8px 12px; grid-template-columns: 38px minmax(0, 1fr) auto auto; }
+  .row__link { padding: 8px 12px; grid-template-columns: 38px minmax(0, 1fr) 90px; gap: 4px 10px; }
   .row__icon { width: 36px; height: 36px; font-size: 20px; }
   .row__cat  { font-size: 14px; }
   .row__narr { font-size: 12px; }
+}
+
+/* Entry detail page (/entries/{id}) */
+.detail__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: -16px -16px 18px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border);
+}
+.detail__head-actions { display: flex; gap: 4px; align-items: center; }
+
+.detail__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  font-size: 18px;
+  line-height: 1;
+  background: transparent;
+  color: var(--text);
+  border: 0;
+  border-radius: 50%;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background .15s ease, color .15s ease;
+}
+.detail__btn:hover { background: var(--surface-2); }
+.detail__close { font-size: 22px; color: var(--text-dim); }
+.detail__btn--danger { color: #fda4af; }
+.detail__btn--danger:hover { background: rgba(239, 68, 68, .15); color: #fecaca; }
+
+.detail__hero {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 8px 0 8px;
+}
+.detail__icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+.detail__cat {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--text);
+  word-break: break-word;
+}
+.detail__amount {
+  font-size: 28px;
+  font-weight: 600;
+  margin: 8px 0 18px 70px;  /* aligns with the text next to the icon */
+  font-variant-numeric: tabular-nums;
+}
+.detail__amount.is-debit  { color: #fda4af; }
+.detail__amount.is-credit { color: #6ee7b7; }
+
+.detail__rows {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.detail__rows li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 14px;
+  color: var(--text);
+}
+.detail__row-icon {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-dim);
+  font-size: 16px;
+}
+
+@media (max-width: 500px) {
+  .detail__head { margin: -12px -12px 14px; }
+  .detail__icon { width: 48px; height: 48px; font-size: 24px; }
+  .detail__cat { font-size: 19px; }
+  .detail__amount { font-size: 24px; margin-left: 60px; }
 }
 
 /* modal */

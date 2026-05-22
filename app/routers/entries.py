@@ -226,6 +226,29 @@ def create(
     return RedirectResponse("/entries?ok=Created", status_code=303)
 
 
+@router.get("/{entry_id}", name="entries.detail")
+def detail(
+    request: Request,
+    entry_id: str,
+    svc: EntryService = Depends(get_entry_service),
+    cats: CategoryService = Depends(get_category_service),
+):
+    try:
+        e = svc.get(entry_id)
+    except NotFoundError:
+        raise HTTPException(status_code=404, detail="entry not found")
+    return templates.TemplateResponse(
+        "entry_detail.html",
+        {
+            "request": request,
+            "entry": e,
+            "categories": cats.list_all(),
+            "ok": request.query_params.get("ok"),
+            "error": request.query_params.get("error"),
+        },
+    )
+
+
 @router.post("/{entry_id}/update", name="entries.update")
 def update(
     entry_id: str,
@@ -251,14 +274,14 @@ def update(
     except NotFoundError:
         raise HTTPException(status_code=404, detail="entry not found")
     except Exception as e:
-        # Modal edits redirect because the modal isn't part of the GET-rendered
-        # page; show a clean one-liner instead of pydantic's debug str.
         from urllib.parse import quote
         return RedirectResponse(
-            f"/entries?error={quote(_humanize_error(e))}",
+            f"/entries/{entry_id}?error={quote(_humanize_error(e))}",
             status_code=303,
         )
-    return RedirectResponse("/entries?ok=Updated", status_code=303)
+    # Land back on the detail page so the user sees the saved values in
+    # context (and can keep editing if needed).
+    return RedirectResponse(f"/entries/{entry_id}?ok=Updated", status_code=303)
 
 
 @router.post("/{entry_id}/delete", name="entries.delete")

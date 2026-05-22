@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% block title %}{{ entry.category }} · Expenso{% endblock %}
+
+{% block content %}
+<div class="card detail">
+  <header class="detail__head">
+    <a href="/entries" class="detail__btn detail__close" aria-label="Back to ledger" title="Back">×</a>
+    <div class="detail__head-actions">
+      <a href="#edit-section" class="detail__btn" aria-label="Edit" title="Edit">✎</a>
+      <form method="post" action="/entries/{{ entry.id }}/delete"
+            onsubmit="return confirm('Delete this entry?');">
+        <button type="submit" class="detail__btn detail__btn--danger" aria-label="Delete" title="Delete">🗑</button>
+      </form>
+    </div>
+  </header>
+
+  <div class="detail__hero">
+    <div class="detail__icon" aria-hidden="true">{{ entry.category | emoji }}</div>
+    <h1 class="detail__cat">{{ entry.category }}</h1>
+  </div>
+
+  <div class="detail__amount {% if entry.debit > 0 %}is-debit{% else %}is-credit{% endif %}">
+    ₹ {% if entry.debit > 0 %}{{ entry.debit | intish }}{% else %}{{ entry.credit | intish }}{% endif %}
+  </div>
+
+  <ul class="detail__rows">
+    {% if entry.narration %}
+    <li>
+      <span class="detail__row-icon" aria-hidden="true">📝</span>
+      <span>{{ entry.narration }}</span>
+    </li>
+    {% endif %}
+    <li>
+      <span class="detail__row-icon" aria-hidden="true">📅</span>
+      <span>{{ entry.date.strftime('%A, %d-%m-%Y') }}</span>
+    </li>
+  </ul>
+</div>
+
+<details class="card card--collapsible" id="edit-section">
+  <summary class="card__head">
+    <h2>✎ Edit</h2>
+    <span class="card__caret" aria-hidden="true">▾</span>
+  </summary>
+  <form class="form form--stack" method="post" action="/entries/{{ entry.id }}/update">
+    <label class="field">
+      <span class="field__label">Date</span>
+      <input class="input" name="date" type="date" value="{{ entry.date.isoformat() }}" required>
+    </label>
+    <label class="field">
+      <span class="field__label">Category</span>
+      <input class="input" name="category" list="all-categories" autocomplete="off"
+             value="{{ entry.category }}" placeholder="e.g. electronics" required>
+    </label>
+    <label class="field">
+      <span class="field__label">Narration</span>
+      <input class="input" name="narration" maxlength="200"
+             value="{{ entry.narration }}" placeholder="e.g. chocolate, lassi…">
+    </label>
+    <div class="form__pair">
+      <label class="field">
+        <span class="field__label">Debit</span>
+        <input class="input num" name="debit" type="number" step="1" min="0"
+               value="{% if entry.debit > 0 %}{{ entry.debit | intish }}{% endif %}" placeholder="0">
+      </label>
+      <label class="field">
+        <span class="field__label">Credit</span>
+        <input class="input num" name="credit" type="number" step="1" min="0"
+               value="{% if entry.credit > 0 %}{{ entry.credit | intish }}{% endif %}" placeholder="0">
+      </label>
+    </div>
+    <p class="muted hint">Leave one blank (or 0) and fill the other.</p>
+    <footer class="modal__foot">
+      <a href="/entries" class="btn btn--ghost">Cancel</a>
+      <button type="submit" class="btn btn--primary">Save changes</button>
+    </footer>
+  </form>
+</details>
+
+<datalist id="all-categories">
+  {% for c in categories %}
+    <option value="{{ c.name }}">{% if c.parent %}{{ c.parent }}{% else %}group{% endif %}</option>
+  {% endfor %}
+</datalist>
+{% endblock %}

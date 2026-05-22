@@ -19,33 +19,17 @@
     </header>
     <ul class="day__entries">
       {% for e in group %}
-      <li class="row"
-          data-entry-id="{{ e.id }}"
-          data-date="{{ e.date.isoformat() }}"
-          data-category="{{ e.category }}"
-          data-narration="{{ e.narration }}"
-          data-debit="{{ e.debit | intish }}"
-          data-credit="{{ e.credit | intish }}">
-        <div class="row__icon" aria-hidden="true">{{ e.category | emoji }}</div>
-        <div class="row__body">
-          <div class="row__cat">{{ e.category }}</div>
-          {% if e.narration %}<div class="row__narr">{{ e.narration }}</div>{% endif %}
-        </div>
-        <div class="row__amount {% if e.debit > 0 %}is-debit{% else %}is-credit{% endif %}">
-          {% if e.debit > 0 %}{{ e.debit | intish }}{% else %}{{ e.credit | intish }}{% endif %}
-        </div>
-        <div class="row__actions">
-          <button class="btn btn--sm btn--icon" type="button" data-edit-entry title="Edit" aria-label="Edit">✎</button>
-          <form class="inline"
-                method="post" action="/entries/{{ e.id }}/delete"
-                hx-post="/entries/{{ e.id }}/delete"
-                hx-target="#ledger-root"
-                hx-swap="innerHTML"
-                hx-confirm="Delete this entry?"
-                onsubmit="return confirm('Delete this entry?');">
-            <button class="btn btn--ghost btn--sm btn--icon btn--danger" type="submit" title="Delete" aria-label="Delete">🗑</button>
-          </form>
-        </div>
+      <li class="row">
+        <a class="row__link" href="/entries/{{ e.id }}">
+          <div class="row__icon" aria-hidden="true">{{ e.category | emoji }}</div>
+          <div class="row__body">
+            <div class="row__cat">{{ e.category }}</div>
+            {% if e.narration %}<div class="row__narr">{{ e.narration }}</div>{% endif %}
+          </div>
+          <div class="row__amount {% if e.debit > 0 %}is-debit{% else %}is-credit{% endif %}">
+            ₹ {% if e.debit > 0 %}{{ e.debit | intish }}{% else %}{{ e.credit | intish }}{% endif %}
+          </div>
+        </a>
       </li>
       {% endfor %}
     </ul>
