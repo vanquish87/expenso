@@ -71,14 +71,17 @@
   </div>
 </div>
 
-<!-- Detail modal — populated by entries.js when a ledger row is clicked. -->
+<!-- Detail modal — opened on row click. Two modes inside the same dialog:
+     data-mode="view" shows the read-only detail; pencil swaps to
+     data-mode="edit" and Cancel / Save swap back. -->
 <div id="entry-detail-modal" class="modal" hidden aria-hidden="true">
   <div class="modal__backdrop" data-modal-close></div>
-  <div class="modal__dialog modal__dialog--detail" role="dialog" aria-labelledby="entry-detail-title" aria-modal="true">
+  <div class="modal__dialog modal__dialog--detail" data-mode="view"
+       role="dialog" aria-labelledby="entry-detail-title" aria-modal="true">
     <header class="detail__head">
       <button type="button" class="detail__btn detail__close" data-modal-close aria-label="Close" title="Close">×</button>
       <div class="detail__head-actions">
-        <a href="#edit-section" class="detail__btn" aria-label="Edit" title="Edit">✎</a>
+        <button type="button" class="detail__btn" data-detail-edit aria-label="Edit" title="Edit">✎</button>
         <form id="entry-detail-delete-form" method="post" action=""
               onsubmit="return confirm('Delete this entry?');">
           <button type="submit" class="detail__btn detail__btn--danger" aria-label="Delete" title="Delete">🗑</button>
@@ -86,30 +89,33 @@
       </div>
     </header>
 
-    <div class="detail__hero">
-      <div class="detail__icon" data-detail-icon aria-hidden="true">🏷️</div>
-      <h2 id="entry-detail-title" class="detail__cat" data-detail-cat></h2>
-    </div>
+    <!-- VIEW mode: read-only details -->
+    <section class="detail__view" data-detail-view>
+      <div class="detail__hero">
+        <div class="detail__icon" data-detail-icon aria-hidden="true">🏷️</div>
+        <h2 id="entry-detail-title" class="detail__cat" data-detail-cat></h2>
+      </div>
 
-    <div class="detail__amount" data-detail-amount></div>
+      <div class="detail__amount" data-detail-amount></div>
 
-    <ul class="detail__rows">
-      <li data-detail-narr-row hidden>
-        <span class="detail__row-icon" aria-hidden="true">📝</span>
-        <span data-detail-narr></span>
-      </li>
-      <li>
-        <span class="detail__row-icon" aria-hidden="true">📅</span>
-        <span data-detail-date></span>
-      </li>
-    </ul>
+      <ul class="detail__rows">
+        <li data-detail-narr-row hidden>
+          <span class="detail__row-icon" aria-hidden="true">📝</span>
+          <span data-detail-narr></span>
+        </li>
+        <li>
+          <span class="detail__row-icon" aria-hidden="true">📅</span>
+          <span data-detail-date></span>
+        </li>
+      </ul>
+    </section>
 
-    <details class="card card--collapsible detail__edit" id="edit-section">
-      <summary class="card__head">
-        <h3>✎ Edit</h3>
-        <span class="card__caret" aria-hidden="true">▾</span>
-      </summary>
-      <form id="entry-detail-edit-form" class="form form--stack" method="post" action="">
+    <!-- EDIT mode: inline form. Submits via HTMX (swaps the ledger in
+         place + JS swaps the modal back to view mode on success). -->
+    <section class="detail__edit" data-detail-edit-view>
+      <h2 class="detail__edit-title">Edit entry</h2>
+      <form id="entry-detail-edit-form" class="form form--stack" method="post" action=""
+            hx-post="" hx-target="#ledger-root" hx-swap="innerHTML">
         <label class="field">
           <span class="field__label">Date</span>
           <input class="input" name="date" type="date" required>
@@ -135,11 +141,11 @@
         </div>
         <p class="muted hint">Leave one blank (or 0) and fill the other.</p>
         <footer class="modal__foot">
-          <button type="button" class="btn btn--ghost" data-modal-close>Cancel</button>
+          <button type="button" class="btn btn--ghost" data-detail-cancel>Cancel</button>
           <button type="submit" class="btn btn--primary">Save changes</button>
         </footer>
       </form>
-    </details>
+    </section>
   </div>
 </div>
 

@@ -550,6 +550,22 @@ input[type="number"] { -moz-appearance: textfield; }
   /* Modal dialog uses padding: 18px 20px 16px — match those for the bleed. */
   margin: -18px -20px 16px;
 }
+
+/* Two modes inside the same dialog: one section visible at a time.
+   Pencil button flips data-mode="view" → "edit"; Save / Cancel flip back. */
+.modal__dialog--detail .detail__view,
+.modal__dialog--detail .detail__edit { display: none; }
+.modal__dialog--detail[data-mode="view"] .detail__view { display: block; }
+.modal__dialog--detail[data-mode="edit"] .detail__edit { display: block; }
+/* In edit mode the pencil + delete head buttons are irrelevant — hide them
+   so only the X close remains. */
+.modal__dialog--detail[data-mode="edit"] .detail__head-actions { display: none; }
+.detail__edit-title {
+  margin: 4px 0 14px;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text);
+}
 .detail__head {
   display: flex;
   justify-content: space-between;

@@ -228,6 +228,7 @@ def create(
 
 @router.post("/{entry_id}/update", name="entries.update")
 def update(
+    request: Request,
     entry_id: str,
     date: str = Form(...),
     category: str = Form(...),
@@ -236,9 +237,18 @@ def update(
     credit: str = Form(""),
     svc: EntryService = Depends(get_entry_service),
 ):
+    htmx = _is_htmx(request)
+
+    def _error(msg: str, status: int = 422):
+        if htmx:
+            from fastapi.responses import PlainTextResponse
+            return PlainTextResponse(msg, status_code=status)
+        from urllib.parse import quote
+        return RedirectResponse(f"/entries?error={quote(msg)}", status_code=303)
+
     d = _parse_date(date)
     if d is None:
-        return RedirectResponse("/entries?error=Invalid date", status_code=303)
+        return _error("Invalid date")
     try:
         svc.update(
             entry_id,
@@ -251,11 +261,13 @@ def update(
     except NotFoundError:
         raise HTTPException(status_code=404, detail="entry not found")
     except Exception as e:
-        from urllib.parse import quote
-        return RedirectResponse(
-            f"/entries?error={quote(_humanize_error(e))}",
-            status_code=303,
-        )
+        return _error(_humanize_error(e))
+
+    if htmx:
+        # Return the refreshed ledger fragment so #ledger-root swaps in
+        # place; JS in the modal will then swap back to view mode and
+        # update the read-only display from the form values.
+        return _render_ledger_root(request, svc)
     return RedirectResponse("/entries?ok=Updated", status_code=303)
 
 
