@@ -169,6 +169,13 @@ body {
 .btn--primary:hover { background: var(--primary-hi); }
 .btn--ghost { background: transparent; }
 .btn--sm { padding: 4px 8px; font-size: 12px; }
+.btn--icon {
+  padding: 5px 9px;
+  font-size: 14px;
+  line-height: 1;
+  min-width: 32px;
+  text-align: center;
+}
 
 .inline { display: inline-flex; gap: 6px; align-items: center; }
 .muted { color: var(--muted); }

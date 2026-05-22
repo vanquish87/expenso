@@ -89,9 +89,9 @@
         <td class="num num--debit">{% if e.debit > 0 %}{{ e.debit | money }}{% endif %}</td>
         <td class="num num--credit">{% if e.credit > 0 %}{{ e.credit | money }}{% endif %}</td>
         <td class="ledger__actions">
-          <button class="btn btn--sm" type="button" data-edit-entry title="Edit">✎ Edit</button>
+          <button class="btn btn--sm btn--icon" type="button" data-edit-entry title="Edit" aria-label="Edit">✎</button>
           <form class="inline" method="post" action="/entries/{{ e.id }}/delete" onsubmit="return confirm('Delete this entry?');">
-            <button class="btn btn--ghost btn--sm btn--danger" type="submit" title="Delete">🗑</button>
+            <button class="btn btn--ghost btn--sm btn--icon btn--danger" type="submit" title="Delete" aria-label="Delete">🗑</button>
           </form>
         </td>
       </tr>
