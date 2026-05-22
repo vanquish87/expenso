@@ -1,7 +1,7 @@
 """Pydantic v2 domain models — the wire & on-disk shape of every entity."""
 from __future__ import annotations
 
-from datetime import date
+from datetime import date, datetime
 from typing import Optional
 from uuid import uuid4
 
@@ -44,12 +44,19 @@ class Category(BaseModel):
 
 
 class Entry(BaseModel):
-    """A single ledger row: date, category (sub-category name), narration, debit/credit."""
+    """A single ledger row: date, category (sub-category name), narration, debit/credit.
+
+    `timestamp` is the precise insertion moment — date supplies the "when did
+    this expense happen" axis, timestamp supplies the "in what order was it
+    recorded" axis. Bulk imports assign sequential per-date timestamps so
+    xlsx row order is preserved; manual creates default to wall-clock now.
+    """
 
     model_config = ConfigDict(str_strip_whitespace=True)
 
     id: str = Field(default_factory=_new_id)
     date: date
+    timestamp: datetime = Field(default_factory=datetime.now)
     category: str = Field(min_length=1, max_length=80)
     narration: str = Field(default="", max_length=200)
     debit: float = Field(default=0.0, ge=0)

@@ -10,9 +10,9 @@ The xlsx has:
 from __future__ import annotations
 
 import re
-from datetime import date as _date, datetime
+from datetime import date as _date, datetime, time, timedelta
 from pathlib import Path
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 from openpyxl import load_workbook
 
@@ -85,7 +85,15 @@ class ImportService:
 
     @staticmethod
     def _read_entries(wb, valid_names: set) -> List[Entry]:
+        """Walk every month sheet in workbook order, row-by-row.
+
+        Each entry gets a synthetic timestamp = ``date_at_midnight + N minutes``
+        where N is the per-date counter incremented in walk order. This
+        preserves xlsx top-to-bottom ordering inside any single date when
+        the ledger later sorts by (date, timestamp).
+        """
         out: List[Entry] = []
+        per_date_count: Dict[_date, int] = {}
         for sheet_name in wb.sheetnames:
             if not MONTH_SHEET.match(sheet_name):
                 continue
@@ -127,9 +135,13 @@ class ImportService:
                         credit = 0.0
                     else:
                         debit = 0.0
+                n = per_date_count.get(d, 0)
+                per_date_count[d] = n + 1
+                ts = datetime.combine(d, time(0, 0)) + timedelta(minutes=n)
                 out.append(
                     Entry(
                         date=d,
+                        timestamp=ts,
                         category=cat,
                         narration=narr,
                         debit=debit,

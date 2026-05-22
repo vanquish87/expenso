@@ -40,7 +40,10 @@ class EntryService:
                 for r in rows
                 if q_low in r.narration.lower() or q_low in r.category.lower()
             ]
-        rows.sort(key=lambda r: (r.date, r.id), reverse=True)
+        # Newest day on top, but inside a day preserve insertion order
+        # (timestamp ASC). Python's sort is stable, so a two-pass sort does it.
+        rows.sort(key=lambda r: r.timestamp)
+        rows.sort(key=lambda r: r.date, reverse=True)
         return rows
 
     def get(self, entry_id: str) -> Entry:
@@ -78,11 +81,14 @@ class EntryService:
         debit: float,
         credit: float,
     ) -> Entry:
-        _ = self.get(entry_id)
+        existing = self.get(entry_id)
         self._assert_category(category)
         updated = Entry(
             id=entry_id,
             date=date_,
+            # Preserve the original timestamp so editing a row doesn't
+            # punt it to the bottom of its day's group.
+            timestamp=existing.timestamp,
             category=category,
             narration=narration or "",
             debit=debit or 0.0,
@@ -95,4 +101,9 @@ class EntryService:
         self._repo.delete(entry_id)
 
     def recent(self, n: int = 10) -> List[Entry]:
-        return self.list_all()[:n]
+        """Most-recently-recorded N entries by timestamp (independent of date).
+
+        Different from list_all's primary sort: home wants "what got added
+        last", not "what happened latest on the calendar".
+        """
+        return sorted(self._repo.list(), key=lambda r: r.timestamp, reverse=True)[:n]
