@@ -17,11 +17,11 @@
     <label class="field">
       <span class="field__label">Category</span>
       <input class="input" name="category" list="all-categories" autocomplete="off"
-             placeholder="Type to search… e.g. munch" required>
+             placeholder="e.g. electronics" required>
     </label>
     <label class="field field--grow">
       <span class="field__label">Narration</span>
-      <input class="input" name="narration" maxlength="200" placeholder="What was it?">
+      <input class="input" name="narration" maxlength="200" placeholder="e.g. chocolate, lassi…">
     </label>
     <label class="field">
       <span class="field__label">Debit</span>
@@ -42,7 +42,7 @@
     <label class="field">
       <span class="field__label">Category</span>
       <input class="input" name="category" list="all-categories" autocomplete="off"
-             value="{{ filters.category }}" placeholder="any">
+             value="{{ filters.category }}" placeholder="any (try: groceries)">
     </label>
     <label class="field">
       <span class="field__label">From</span>
@@ -54,7 +54,7 @@
     </label>
     <label class="field field--grow">
       <span class="field__label">Search narration</span>
-      <input class="input" name="q" value="{{ filters.q }}" placeholder="text…">
+      <input class="input" name="q" value="{{ filters.q }}" placeholder="chocolate, lassi…">
     </label>
     <button type="submit" class="btn">Apply</button>
     <a href="/entries" class="btn btn--ghost">Clear</a>
@@ -119,11 +119,11 @@
       <label class="field">
         <span class="field__label">Category</span>
         <input class="input" name="category" list="all-categories" autocomplete="off"
-               placeholder="Type to search… e.g. munch" required>
+               placeholder="e.g. electronics" required>
       </label>
       <label class="field">
         <span class="field__label">Narration</span>
-        <input class="input" name="narration" maxlength="200" placeholder="What was it?">
+        <input class="input" name="narration" maxlength="200" placeholder="e.g. chocolate, lassi…">
       </label>
       <div class="form__pair">
         <label class="field">
