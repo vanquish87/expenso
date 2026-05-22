@@ -342,19 +342,115 @@ input[type="number"] { -moz-appearance: textfield; }
 .cat-row { display: flex; gap: 6px; flex: 1; }
 .cat-row .input { flex: 1; }
 
-/* entries ledger (read-only rows + side actions) */
-.row-actions { display: inline-flex; gap: 6px; align-items: center; }
-/* Narration is the readable, growable column: wrap freely, no ellipsis,
-   and a generous min-width so the column claims real estate in the table
-   auto-layout. */
-.ledger__narr { white-space: normal; word-break: break-word; min-width: 360px; line-height: 1.45; }
-.ledger__actions-head { width: 1%; white-space: nowrap; text-align: right; }
-.ledger__actions { white-space: nowrap; text-align: right; display: flex; gap: 6px; justify-content: flex-end; align-items: center; }
-/* Fixed-width columns next to narration keep narration the elastic one. */
-.ledger td:first-child, .ledger th:first-child { white-space: nowrap; }
-.ledger td:nth-child(2) { white-space: nowrap; }
+/* Entries ledger — grouped by date.
+   Layout = list of day cards. Each day card has a header row
+   (big day-number on left, weekday/month next to it, day net on the
+   right) and a list of entries below. Each entry row is icon + body +
+   amount + actions. */
+.ledger {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.day {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.day__head {
+  display: grid;
+  grid-template-columns: 44px 1fr auto;
+  gap: 4px 14px;
+  align-items: center;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.day__num {
+  font-size: 28px;
+  font-weight: 600;
+  color: var(--text);
+  line-height: 1;
+}
+
+.day__meta { display: flex; flex-direction: column; min-width: 0; }
+.day__weekday { font-size: 14px; font-weight: 600; color: var(--text); }
+.day__month   { font-size: 12px; color: var(--text-dim); }
+
+.day__total {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+.day__total.is-credit { color: var(--ok); }
+
+.day__entries { list-style: none; margin: 0; padding: 0; }
+
+.row {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr) auto auto;
+  gap: 4px 12px;
+  padding: 10px 16px;
+  align-items: center;
+  border-top: 1px solid var(--border);
+  transition: background .15s ease;
+}
+
+.row__icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  line-height: 1;
+}
+
+.row__body { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.row__cat {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.row__narr {
+  font-size: 13px;
+  color: var(--text-dim);
+  word-break: break-word;
+  line-height: 1.4;
+}
+
+.row__amount {
+  font-size: 15px;
+  font-weight: 600;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.row__amount.is-debit  { color: #fda4af; }
+.row__amount.is-credit { color: #6ee7b7; }
+
+.row__actions { display: flex; gap: 4px; align-items: center; }
+
 .btn--danger { color: #fda4af; }
 .btn--danger:hover { background: rgba(239,68,68,.18); color: #fecaca; }
+
+@media (max-width: 500px) {
+  .day__head { padding: 10px 12px; grid-template-columns: 40px 1fr auto; }
+  .day__num  { font-size: 24px; }
+  .row { padding: 8px 12px; grid-template-columns: 38px minmax(0, 1fr) auto auto; }
+  .row__icon { width: 36px; height: 36px; font-size: 20px; }
+  .row__cat  { font-size: 14px; }
+  .row__narr { font-size: 12px; }
+}
 
 /* modal */
 .modal {
@@ -437,8 +533,6 @@ body.modal-open { overflow: hidden; }
 
 /* responsive */
 @media (max-width: 1024px) {
-  /* Narration was hogging 360px; shrink so neighbour columns stop wrapping. */
-  .ledger__narr { min-width: 220px; }
   .container { padding: 0 16px; }
 
   /* Hamburger menu: brand on the left, ☰ + Re-import on the right.
@@ -503,70 +597,13 @@ body.modal-open { overflow: hidden; }
   .form--entry-filter > :nth-child(5) { grid-column: 1;     grid-row: 4; }  /* apply */
   .form--entry-filter > :nth-child(6) { grid-column: 2;     grid-row: 4; justify-self: stretch; }  /* clear */
 
-  /* Ledger table → 2-line card layout.
-       row 1 : date (left) ........................... category chip (right)
-       row 2 : narration ............ money (debit OR credit) ......... ✎ 🗑
-     Only one of debit/credit is non-empty per entry, and the existing colour
-     code (red=.num--debit, green=.num--credit) already tells which is which,
-     so no DEBIT/CREDIT label is needed in the card. The empty <td> collapses
-     to zero size and both money tds share grid cell (col 2, row 2). */
-  .ledger thead { display: none; }
-  .ledger, .ledger tbody, .ledger tr { display: block; }
-  .ledger tr {
-    display: grid;
-    /* 4-col layout per row.
-         col 1 (auto)        date — only takes what "2026-05-21" needs.
-         col 2 (1fr)         the flex space (narration grows into it,
-                             and the chip spans into it on row 1).
-         col 3 (90px fixed)  money — fixed so values stack at the same x.
-         col 4 (80px fixed)  ✎ 🗑 actions. */
-    grid-template-columns: auto minmax(0, 1fr) 90px 80px;
-    gap: 8px 12px;
-    padding: 12px 14px;
-    margin: 0 0 8px;
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    background: var(--surface-2);
-  }
-  .ledger td { display: block; padding: 0; border: 0; line-height: 1.4; }
-  /* Row 1: date small (col 1) | chip spans cols 2-4 (right-aligned, room to breathe) */
-  .ledger td:nth-child(1) {
-    grid-column: 1; grid-row: 1;
-    color: var(--text-dim); font-size: 13px;
-    align-self: center;
-  }
-  .ledger td:nth-child(2) { grid-column: 2 / 5; grid-row: 1; justify-self: end; }
-  /* Row 2: narration spans cols 1-2 | money col 3 (LEFT-aligned so "Rs"
-     starts at same x across cards) | actions col 4 */
-  .ledger td:nth-child(3) {
-    grid-column: 1 / 3; grid-row: 2;
-    font-size: 14px; min-width: 0; align-self: center;
-  }
-  .ledger td:nth-child(4),
-  .ledger td:nth-child(5) {
-    grid-column: 3; grid-row: 2;
-    justify-self: start; align-self: center;
-    font-size: 15px; font-weight: 600;
-    text-align: left;
-  }
-  .ledger td:nth-child(6) { grid-column: 4; grid-row: 2; justify-self: end; align-self: center; }
-  .ledger__narr { min-width: 0; }
-  /* Bigger, more presentable category chip in card view —
-     emoji ~18-20px so it reads at a glance. Allow wrap on very narrow
-     screens but with enough col-span width above, it stays one line. */
-  .ledger .chip {
-    font-size: 13px;
-    padding: 5px 12px;
-    white-space: normal;
-    word-break: break-word;
-    max-width: 100%;
-  }
-  .ledger .chip__emoji { font-size: 1.55em; vertical-align: -3px; margin-right: 4px; }
+  /* (The ledger is now a grouped-by-date list of cards — see the base
+      .ledger / .day / .row rules above. No table-based card view needed
+      here anymore.) */
 }
 
 @media (max-width: 800px) {
   /* Drawer-nav already in place from @1024; just refine the rest. */
-  .ledger__narr { min-width: 180px; line-height: 1.35; }
   .field { min-width: 130px; }
   .field--narrow { min-width: 90px; max-width: 130px; }
   /* Smaller table cells, tabular-num-tight so "Rs 1,200" doesn't wrap. */
@@ -579,7 +616,6 @@ body.modal-open { overflow: hidden; }
   .container { padding: 0 12px; }
   .form { gap: 8px; }
   .field { min-width: 120px; }
-  .ledger__narr { min-width: 140px; }
   /* On very narrow screens the chip + emoji can wrap; allow it. */
   .chip { white-space: normal; word-break: break-word; }
   .kpi { padding: 10px 12px; }
@@ -587,15 +623,6 @@ body.modal-open { overflow: hidden; }
   /* Cards lose chunky padding on tiny screens. */
   .card { padding: 12px; }
   .card__head h2 { font-size: 15px; }
-  /* Ledger card: tighter grid so the chip still has horizontal room. */
-  .ledger tr {
-    grid-template-columns: auto minmax(0, 1fr) 80px 72px;
-    gap: 6px 10px;
-    padding: 10px 12px;
-  }
-  .ledger td:nth-child(1) { font-size: 12px; }
-  .ledger td:nth-child(4),
-  .ledger td:nth-child(5) { font-size: 14px; }
 }
 
 @media (max-width: 420px) {
@@ -627,17 +654,9 @@ body.modal-open { overflow: hidden; }
   background: rgba(129, 140, 248, 0.07);
 }
 
-/* Card-mode ledger (≤1024px) — stronger feedback because the row IS a card
-   and has visible Edit / Delete actions inside it. */
-@media (max-width: 1024px) {
-  .ledger tr {
-    transition: background .15s ease, border-color .15s ease, box-shadow .15s ease;
-  }
-  .ledger tr:hover {
-    background: rgba(129, 140, 248, 0.10);
-    border-color: var(--primary);
-    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5);
-  }
+/* Entry rows inside a day card: primary tint on hover */
+.day__entries .row:hover {
+  background: rgba(129, 140, 248, 0.08);
 }
 
 /* Budget items — primary tint on hover, except the over-budget ones keep

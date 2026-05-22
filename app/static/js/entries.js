@@ -32,15 +32,17 @@
   // but a per-button listener keeps the data-attribute scoping obvious.
   document.querySelectorAll('[data-edit-entry]').forEach((btn) => {
     btn.addEventListener('click', () => {
-      const tr = btn.closest('tr');
-      if (!tr) return;
+      // Row used to be a <tr>; in the new grouped layout it's an <li class="row">.
+      // closest('[data-entry-id]') finds whatever element carries the row data.
+      const row = btn.closest('[data-entry-id]');
+      if (!row) return;
       openModal(btn, {
-        id:        tr.dataset.entryId,
-        date:      tr.dataset.date,
-        category:  tr.dataset.category,
-        narration: tr.dataset.narration,
-        debit:     tr.dataset.debit,
-        credit:    tr.dataset.credit,
+        id:        row.dataset.entryId,
+        date:      row.dataset.date,
+        category:  row.dataset.category,
+        narration: row.dataset.narration,
+        debit:     row.dataset.debit,
+        credit:    row.dataset.credit,
       });
     });
   });
