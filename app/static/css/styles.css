@@ -371,7 +371,9 @@ input[type="number"] { -moz-appearance: textfield; }
 
 .day__head {
   display: grid;
-  grid-template-columns: 44px 1fr auto;
+  /* Match the row layout's money column (100px) so the day total aligns
+     vertically with the entries beneath it. */
+  grid-template-columns: 44px 1fr 100px;
   gap: 4px 14px;
   align-items: center;
   padding: 12px 16px;
@@ -400,6 +402,7 @@ input[type="number"] { -moz-appearance: textfield; }
   font-weight: 600;
   color: var(--text);
   font-variant-numeric: tabular-nums;
+  text-align: right;  /* last digit pins to col 3's right edge */
 }
 .day__total.is-credit { color: var(--ok); }
 
@@ -463,8 +466,10 @@ input[type="number"] { -moz-appearance: textfield; }
   font-weight: 600;
   white-space: nowrap;
   font-variant-numeric: tabular-nums;
-  /* Fixed col-width on the grid (100px) + default text-align:left means
-     "₹ 220" / "₹ 1,200" all start at the same x position across cards. */
+  /* Right-aligned inside the fixed 100px col so the LAST digit of every
+     amount lines up at the same x across rows — matches a typical money
+     column where you read down the right edge. */
+  text-align: right;
 }
 .row__amount.is-debit  { color: #fda4af; }
 .row__amount.is-credit { color: #6ee7b7; }
@@ -473,7 +478,7 @@ input[type="number"] { -moz-appearance: textfield; }
 .btn--danger:hover { background: rgba(239,68,68,.18); color: #fecaca; }
 
 @media (max-width: 500px) {
-  .day__head { padding: 10px 12px; grid-template-columns: 40px 1fr auto; }
+  .day__head { padding: 10px 12px; grid-template-columns: 40px 1fr 90px; }
   .day__num  { font-size: 24px; }
   .row__link { padding: 8px 12px; grid-template-columns: 38px minmax(0, 1fr) 90px; gap: 4px 10px; }
   .row__icon { width: 36px; height: 36px; font-size: 20px; }

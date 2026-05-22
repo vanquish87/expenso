@@ -124,6 +124,23 @@ def _intish(v) -> str:
     return f"{n:.2f}"
 
 
+def _money_int(v) -> str:
+    """Display-only integer money with thousands separators.
+
+    Same as ``intish`` but with commas — "14,442" rather than "14442". Used
+    in ledger row amounts / day totals / detail page where humans read the
+    number; NOT for form value attrs (those still need plain digits the
+    browser can parse, hence ``intish`` there).
+    """
+    try:
+        n = float(v)
+    except (TypeError, ValueError):
+        return "0"
+    if n == int(n):
+        return f"{int(n):,}"
+    return f"{n:,.2f}"
+
+
 def _emoji_for(v) -> str:
     """Pick an emoji based on keywords found in a category/sub-category name."""
     if not v:
@@ -143,6 +160,7 @@ def _kind_emoji(v) -> str:
 templates = Jinja2Templates(directory=str(settings.TEMPLATES_DIR))
 templates.env.filters["money"] = _money
 templates.env.filters["intish"] = _intish
+templates.env.filters["money_int"] = _money_int
 templates.env.filters["emoji"] = _emoji_for
 templates.env.filters["kind_emoji"] = _kind_emoji
 templates.env.globals["currency"] = settings.CURRENCY_SYMBOL

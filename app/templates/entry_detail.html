@@ -20,7 +20,7 @@
   </div>
 
   <div class="detail__amount {% if entry.debit > 0 %}is-debit{% else %}is-credit{% endif %}">
-    ₹ {% if entry.debit > 0 %}{{ entry.debit | intish }}{% else %}{{ entry.credit | intish }}{% endif %}
+    ₹ {% if entry.debit > 0 %}{{ entry.debit | money_int }}{% else %}{{ entry.credit | money_int }}{% endif %}
   </div>
 
   <ul class="detail__rows">

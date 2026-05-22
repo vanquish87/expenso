@@ -15,7 +15,7 @@
         <div class="day__weekday">{{ date_.strftime('%A') }}</div>
         <div class="day__month">{{ date_.strftime('%B %Y') }}</div>
       </div>
-      <div class="day__total{% if day_net > 0 %} is-credit{% endif %}">{{ day_net | intish }}</div>
+      <div class="day__total{% if day_net > 0 %} is-credit{% endif %}">{{ day_net | money_int }}</div>
     </header>
     <ul class="day__entries">
       {% for e in group %}
@@ -27,7 +27,7 @@
             {% if e.narration %}<div class="row__narr">{{ e.narration }}</div>{% endif %}
           </div>
           <div class="row__amount {% if e.debit > 0 %}is-debit{% else %}is-credit{% endif %}">
-            ₹ {% if e.debit > 0 %}{{ e.debit | intish }}{% else %}{{ e.credit | intish }}{% endif %}
+            ₹ {% if e.debit > 0 %}{{ e.debit | money_int }}{% else %}{{ e.credit | money_int }}{% endif %}
           </div>
         </a>
       </li>
