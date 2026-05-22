@@ -153,6 +153,24 @@ body {
 .input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(99,102,241,.18); }
 .input--sm { padding: 4px 8px; font-size: 13px; }
 
+/* Money fields are integer-only — drop the native ±  spinner so the
+   field is just a clean text box you can type into. */
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type="number"] { -moz-appearance: textfield; }
+
+/* Money fields cap out around 7 digits ("9,999,999") so don't reserve
+   the global 140px min — narrowing them gives narration breathing room
+   in the same row. */
+.field--narrow {
+  min-width: 110px;
+  max-width: 140px;
+  flex: 0 0 auto;
+}
+
 .btn {
   background: var(--surface-2);
   color: var(--text);
