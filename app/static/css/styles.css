@@ -141,6 +141,27 @@ body {
 .link { color: var(--accent); text-decoration: none; font-size: 13px; }
 .link:hover { text-decoration: underline; }
 
+/* Collapsible card via native <details>/<summary>. <summary> is what you
+   click to fold/unfold; <details open> starts expanded. */
+.card--collapsible > summary {
+  cursor: pointer;
+  list-style: none;
+  user-select: none;
+}
+.card--collapsible > summary::-webkit-details-marker { display: none; }
+.card--collapsible > summary::marker { content: ''; }
+.card--collapsible > summary:hover h2 { color: var(--accent); }
+/* Collapsed: drop the 12px bottom gap on the head so the closed card is tight. */
+.card--collapsible:not([open]) > summary { margin-bottom: 0; }
+.card__caret {
+  font-size: 14px;
+  color: var(--muted);
+  transition: transform .2s ease;
+  margin-left: 8px;
+  display: inline-block;
+}
+.card--collapsible[open] > summary .card__caret { transform: rotate(180deg); }
+
 /* tables */
 .table { width: 100%; border-collapse: collapse; }
 .table th, .table td {
