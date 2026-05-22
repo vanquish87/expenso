@@ -16,11 +16,8 @@
     </label>
     <label class="field">
       <span class="field__label">Category</span>
-      <select class="input" name="category" required>
-        {% for c in categories %}
-          <option value="{{ c.name }}">{{ c.name }}{% if c.parent %} <span>({{ c.parent }})</span>{% endif %}</option>
-        {% endfor %}
-      </select>
+      <input class="input" name="category" list="all-categories" autocomplete="off"
+             placeholder="Type to search… e.g. munch" required>
     </label>
     <label class="field field--grow">
       <span class="field__label">Narration</span>
@@ -28,11 +25,11 @@
     </label>
     <label class="field">
       <span class="field__label">Debit</span>
-      <input class="input num" name="debit" type="number" step="0.01" min="0" value="0">
+      <input class="input num" name="debit" type="number" step="1" min="0" value="0">
     </label>
     <label class="field">
       <span class="field__label">Credit</span>
-      <input class="input num" name="credit" type="number" step="0.01" min="0" value="0">
+      <input class="input num" name="credit" type="number" step="1" min="0" value="0">
     </label>
     <button type="submit" class="btn btn--primary">Add</button>
   </form>
@@ -44,12 +41,8 @@
   <form class="form form--row" method="get" action="/entries">
     <label class="field">
       <span class="field__label">Category</span>
-      <select class="input" name="category">
-        <option value="">— any —</option>
-        {% for c in categories %}
-          <option value="{{ c.name }}" {% if filters.category == c.name %}selected{% endif %}>{{ c.name }}</option>
-        {% endfor %}
-      </select>
+      <input class="input" name="category" list="all-categories" autocomplete="off"
+             value="{{ filters.category }}" placeholder="any">
     </label>
     <label class="field">
       <span class="field__label">From</span>
@@ -125,11 +118,8 @@
       </label>
       <label class="field">
         <span class="field__label">Category</span>
-        <select class="input" name="category" required>
-          {% for c in categories %}
-            <option value="{{ c.name }}">{{ c.name }}{% if c.parent %} ({{ c.parent }}){% endif %}</option>
-          {% endfor %}
-        </select>
+        <input class="input" name="category" list="all-categories" autocomplete="off"
+               placeholder="Type to search… e.g. munch" required>
       </label>
       <label class="field">
         <span class="field__label">Narration</span>
@@ -138,11 +128,11 @@
       <div class="form__pair">
         <label class="field">
           <span class="field__label">Debit</span>
-          <input class="input num" name="debit" type="number" step="0.01" min="0" value="0">
+          <input class="input num" name="debit" type="number" step="1" min="0" value="0">
         </label>
         <label class="field">
           <span class="field__label">Credit</span>
-          <input class="input num" name="credit" type="number" step="0.01" min="0" value="0">
+          <input class="input num" name="credit" type="number" step="1" min="0" value="0">
         </label>
       </div>
       <p class="muted hint">One of Debit / Credit must be &gt; 0; the other must be 0.</p>
@@ -153,6 +143,13 @@
     </form>
   </div>
 </div>
+
+<!-- Shared category typeahead source: value = category, label = parent group (or "group"). -->
+<datalist id="all-categories">
+  {% for c in categories %}
+    <option value="{{ c.name }}">{% if c.parent %}{{ c.parent }}{% else %}group{% endif %}</option>
+  {% endfor %}
+</datalist>
 {% endblock %}
 
 {% block scripts %}

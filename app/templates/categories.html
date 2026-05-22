@@ -16,12 +16,8 @@
     </label>
     <label class="field">
       <span class="field__label">Parent group <span class="muted">(blank = create a group)</span></span>
-      <select class="input" name="parent">
-        <option value="">— (top-level group)</option>
-        {% for g in groups %}
-          <option value="{{ g.name }}">{{ g.name }}</option>
-        {% endfor %}
-      </select>
+      <input class="input" name="parent" list="parent-groups" autocomplete="off"
+             placeholder="blank for top-level">
     </label>
     <button type="submit" class="btn btn--primary">Add</button>
   </form>
@@ -47,11 +43,8 @@
         <li class="cat-list__item">
           <form class="cat-row" method="post" action="/categories/{{ s.id }}/update">
             <input class="input input--sm" name="name" value="{{ s.name }}" required>
-            <select class="input input--sm" name="parent">
-              {% for g in groups %}
-                <option value="{{ g.name }}" {% if g.name == s.parent %}selected{% endif %}>{{ g.name }}</option>
-              {% endfor %}
-            </select>
+            <input class="input input--sm" name="parent" list="parent-groups" autocomplete="off"
+                   value="{{ s.parent }}" placeholder="parent group">
             <button class="btn btn--sm" type="submit">Save</button>
           </form>
           <form class="inline" method="post" action="/categories/{{ s.id }}/delete"
@@ -70,4 +63,10 @@
     <p class="empty">No categories yet.</p>
   {% endif %}
 </div>
+
+<datalist id="parent-groups">
+  {% for g in groups %}
+    <option value="{{ g.name }}"></option>
+  {% endfor %}
+</datalist>
 {% endblock %}

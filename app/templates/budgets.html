@@ -12,15 +12,12 @@
   <form class="form form--row" method="post" action="/budgets">
     <label class="field">
       <span class="field__label">Category</span>
-      <select class="input" name="category" required>
-        {% for c in categories %}
-          <option value="{{ c.name }}">{{ c.name }}{% if c.parent %} ({{ c.parent }}){% endif %}</option>
-        {% endfor %}
-      </select>
+      <input class="input" name="category" list="all-categories" autocomplete="off"
+             placeholder="Type to search… e.g. munch" required>
     </label>
     <label class="field">
       <span class="field__label">Monthly cap</span>
-      <input class="input num" name="monthly_cap" type="number" step="0.01" min="0.01" required>
+      <input class="input num" name="monthly_cap" type="number" step="1" min="1" required>
     </label>
     <button type="submit" class="btn btn--primary">Add</button>
   </form>
@@ -44,7 +41,7 @@
         <span>{{ s.pct }}%</span>
         <span class="muted">{{ s.remaining | money }} remaining</span>
         <form class="inline" method="post" action="/budgets/{{ s.budget.id }}/update">
-          <input class="input input--sm num" name="monthly_cap" type="number" step="0.01" min="0.01" value="{{ '%.2f' % s.budget.monthly_cap }}">
+          <input class="input input--sm num" name="monthly_cap" type="number" step="1" min="1" value="{{ s.budget.monthly_cap | round(0, 'common') | int }}">
           <button class="btn btn--sm" type="submit">Save</button>
         </form>
         <form class="inline" method="post" action="/budgets/{{ s.budget.id }}/delete" onsubmit="return confirm('Delete budget?');">
@@ -58,4 +55,10 @@
     <p class="empty">No budgets yet — add one above to start tracking.</p>
   {% endif %}
 </div>
+
+<datalist id="all-categories">
+  {% for c in categories %}
+    <option value="{{ c.name }}">{% if c.parent %}{{ c.parent }}{% else %}group{% endif %}</option>
+  {% endfor %}
+</datalist>
 {% endblock %}
