@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% block title %}Categories · Expenso{% endblock %}
+
+{% block content %}
+<section class="page-head">
+  <h1>Categories</h1>
+  <p class="hero__sub">Groups contain sub-categories. Entries are tagged with a sub-category (or a group, if you prefer).</p>
+</section>
+
+<div class="card">
+  <header class="card__head"><h2>Add category</h2></header>
+  <form class="form form--inline" method="post" action="/categories">
+    <label class="field">
+      <span class="field__label">Name</span>
+      <input class="input" name="name" required maxlength="80" placeholder="e.g. GROCERIES">
+    </label>
+    <label class="field">
+      <span class="field__label">Parent group <span class="muted">(blank = create a group)</span></span>
+      <select class="input" name="parent">
+        <option value="">— (top-level group)</option>
+        {% for g in groups %}
+          <option value="{{ g.name }}">{{ g.name }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <button type="submit" class="btn btn--primary">Add</button>
+  </form>
+</div>
+
+<div class="card">
+  <header class="card__head"><h2>All categories</h2></header>
+  {% if grouped %}
+  <div class="cat-grid">
+    {% for block in grouped %}
+    <section class="cat-group">
+      <header class="cat-group__head">
+        <h3>{{ block.group.name }}</h3>
+        {% if block.group.id %}
+        <form class="inline" method="post" action="/categories/{{ block.group.id }}/delete"
+              onsubmit="return confirm('Delete group {{ block.group.name }}?');">
+          <button class="btn btn--ghost btn--sm" type="submit">Delete group</button>
+        </form>
+        {% endif %}
+      </header>
+      <ul class="cat-list">
+      {% for s in block.subs %}
+        <li class="cat-list__item">
+          <form class="cat-row" method="post" action="/categories/{{ s.id }}/update">
+            <input class="input input--sm" name="name" value="{{ s.name }}" required>
+            <select class="input input--sm" name="parent">
+              {% for g in groups %}
+                <option value="{{ g.name }}" {% if g.name == s.parent %}selected{% endif %}>{{ g.name }}</option>
+              {% endfor %}
+            </select>
+            <button class="btn btn--sm" type="submit">Save</button>
+          </form>
+          <form class="inline" method="post" action="/categories/{{ s.id }}/delete"
+                onsubmit="return confirm('Delete {{ s.name }}?');">
+            <button class="btn btn--ghost btn--sm" type="submit">×</button>
+          </form>
+        </li>
+      {% else %}
+        <li class="muted">No sub-categories yet.</li>
+      {% endfor %}
+      </ul>
+    </section>
+    {% endfor %}
+  </div>
+  {% else %}
+    <p class="empty">No categories yet.</p>
+  {% endif %}
+</div>
+{% endblock %}

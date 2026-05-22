@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Expenso{% endblock %}</title>
+  <link rel="stylesheet" href="/static/css/styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js" defer></script>
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar__brand">
+      <a href="/" class="brand">Expenso</a>
+      <span class="brand__tag">expense tracker</span>
+    </div>
+    <nav class="topbar__nav">
+      <a href="/" class="navlink" data-route="home">Home</a>
+      <a href="/categories" class="navlink" data-route="categories">Categories</a>
+      <a href="/entries" class="navlink" data-route="entries">Entries</a>
+      <a href="/budgets" class="navlink" data-route="budgets">Budgets</a>
+      <a href="/analytics" class="navlink" data-route="analytics">Analytics</a>
+    </nav>
+    <div class="topbar__actions">
+      <button id="reimport-btn" type="button" class="btn btn--ghost" title="Re-import from the source xlsx">↻ Re-import</button>
+    </div>
+  </header>
+
+  <div id="toast" class="toast" hidden></div>
+
+  {% if error %}<div class="banner banner--error">{{ error }}</div>{% endif %}
+  {% if ok %}<div class="banner banner--ok">{{ ok }}</div>{% endif %}
+
+  <main class="container">
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="footer">
+    <span>Expenso · CSV-backed · FastAPI</span>
+  </footer>
+
+  <script src="/static/js/app.js" defer></script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>
