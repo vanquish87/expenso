@@ -61,7 +61,6 @@ body {
   color: var(--text); text-decoration: none; font-weight: 700; font-size: 18px;
   letter-spacing: .3px;
 }
-.brand__tag { color: var(--muted); font-size: 12px; }
 .topbar__nav { display: flex; gap: 4px; flex: 1; }
 .navlink {
   color: var(--text-dim); text-decoration: none;
@@ -465,7 +464,6 @@ body.modal-open { overflow: hidden; }
 
 @media (max-width: 800px) {
   /* Drawer-nav already in place from @1024; just refine the rest. */
-  .brand__tag { display: none; }
   .ledger__narr { min-width: 180px; line-height: 1.35; }
   .field { min-width: 130px; }
   .field--narrow { min-width: 90px; max-width: 130px; }
