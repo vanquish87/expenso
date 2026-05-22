@@ -340,48 +340,102 @@ input[type="number"] { -moz-appearance: textfield; }
 .cat-list__item { display: flex; align-items: center; gap: 6px; }
 .cat-emoji { flex: 0 0 auto; font-size: 16px; line-height: 1; width: 20px; text-align: center; }
 
-/* Icon picker: small text input + grid of emoji buttons */
-.input--icon {
-  width: 80px;
-  max-width: 80px;
-  text-align: center;
-  font-size: 18px;
-  letter-spacing: 0;
-  padding: 4px 6px;
-}
-.cat-add-form { position: relative; }
-.icon-palette {
-  flex: 1 1 100%;
+/* Add-category form: circular icon button + name input side-by-side
+   (mobile-app inspired). The icon button opens the picker modal. */
+.cat-add { gap: 16px; }
+.cat-add__hero {
   display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-  padding: 8px;
-  margin-top: 4px;
-  background: var(--bg-2);
+  align-items: flex-end;
+  gap: 14px;
+}
+.cat-add__foot {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 8px;
+}
+.input--lg {
+  font-size: 17px;
+  padding: 10px 12px;
+}
+
+/* Circular emoji-preview button — used in the Add form (large) and on
+   every per-row edit form (small). Clicking opens the icon picker modal
+   which writes back to the form's hidden 'icon' input. */
+.cat-icon-btn {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: var(--surface-2);
   border: 1px solid var(--border);
-  border-radius: 8px;
-  max-height: 120px;
-  overflow-y: auto;
-}
-.icon-palette__btn {
-  background: transparent;
-  border: 1px solid transparent;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 26px;
   line-height: 1;
-  padding: 4px 6px;
-  min-width: 32px;
-  transition: background .12s ease, border-color .12s ease;
+  cursor: pointer;
+  flex-shrink: 0;
+  color: var(--text);
+  transition: background .15s ease, border-color .15s ease;
 }
-.icon-palette__btn:hover {
+.cat-icon-btn:hover {
   background: rgba(129, 140, 248, 0.12);
   border-color: var(--primary);
 }
+.cat-icon-btn:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+.cat-icon-btn--sm {
+  width: 34px;
+  height: 34px;
+  font-size: 18px;
+}
+
 .cat-row--group {
   display: inline-flex;
   gap: 6px;
   align-items: center;
+}
+
+/* Icon picker modal — grid of circular emoji choices */
+.modal__dialog--picker {
+  width: min(540px, calc(100% - 32px));
+  max-height: calc(100vh - 32px);
+  overflow-y: auto;
+}
+.picker__head { justify-content: space-between; align-items: center; }
+.icon-picker-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(52px, 1fr));
+  gap: 10px;
+  padding: 4px 0 8px;
+}
+.icon-picker-grid__btn {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  width: 52px;
+  height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  line-height: 1;
+  cursor: pointer;
+  color: var(--text);
+  transition: background .12s ease, border-color .12s ease, transform .12s ease;
+}
+.icon-picker-grid__btn:hover {
+  background: rgba(129, 140, 248, 0.15);
+  border-color: var(--primary);
+  transform: scale(1.05);
+}
+.icon-picker-grid__btn--auto {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: .5px;
 }
 .cat-row { display: flex; gap: 6px; flex: 1; }
 .cat-row .input { flex: 1; }

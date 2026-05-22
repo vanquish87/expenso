@@ -9,37 +9,31 @@
 
 <div class="card">
   <header class="card__head"><h2>Add category</h2></header>
-  <form class="form form--inline cat-add-form" method="post" action="/categories">
-    <label class="field">
-      <span class="field__label">Name</span>
-      <input class="input" name="name" required maxlength="80" placeholder="e.g. GROCERIES">
-    </label>
+  <form class="form form--stack cat-add" method="post" action="/categories">
+    <div class="cat-add__hero">
+      <button type="button" class="cat-icon-btn" data-pick-icon
+              aria-label="Pick an icon for this category">
+        <span data-icon-preview aria-hidden="true">❓</span>
+      </button>
+      <label class="field field--grow">
+        <span class="field__label">Name</span>
+        <input class="input input--lg" name="name" required maxlength="80"
+               placeholder="e.g. GROCERIES" autocomplete="off">
+      </label>
+    </div>
+
     <label class="field">
       <span class="field__label">Parent group <span class="muted">(blank = create a group)</span></span>
       <input class="input" name="parent" list="parent-groups" autocomplete="off"
              placeholder="blank for top-level">
     </label>
-    <label class="field field--narrow">
-      <span class="field__label">Icon <span class="muted">(blank = auto)</span></span>
-      <input class="input input--icon" name="icon" maxlength="8" placeholder="auto"
-             autocomplete="off" aria-label="Icon emoji">
-    </label>
-    <button type="submit" class="btn btn--primary">Add</button>
-    {# Common starter palette — clicking one fills the icon input above. #}
-    <div class="icon-palette" role="toolbar" aria-label="Icon picker">
-      {% for em in [
-        '🛒','🍽️','☕','🍔','🍕','🍦','🥖','🍿','🍪','🥂','💎','🍹','🥛','🧃','🍵',
-        '⛽','🚖','🛵','🏍️','🛺','🚇','🚆','✈️','🏨','🧳',
-        '💡','🔥','📱','📺','📶','💧','🏠','🔧','🔌',
-        '💇','🧴','💊','🩺','🏥','🦷','🛡️',
-        '🏃','🏋️','🧘','🎬','🎮','📚','💻','📷','🛍️','👕','👟',
-        '🏫','🧸','👶','👨‍👩‍👧‍👦','🐾','🐶','🐱',
-        '👛','💰','🎉','💼','💳','📈','🐷','💸','🔁',
-        '🚶','🎁','🎂','💐','🥖','🏷️',
-      ] %}
-        <button type="button" class="icon-palette__btn" data-emoji="{{ em }}" aria-label="Pick {{ em }}">{{ em }}</button>
-      {% endfor %}
-    </div>
+
+    {# Hidden — set by the icon-picker modal when the circle button above is clicked. #}
+    <input type="hidden" name="icon" value="">
+
+    <footer class="cat-add__foot">
+      <button type="submit" class="btn btn--primary">Save</button>
+    </footer>
   </form>
 </div>
 
@@ -50,16 +44,16 @@
     {% for block in grouped %}
     <section class="cat-group">
       <header class="cat-group__head">
-        <h3>
-          {{ block.group.name | emoji }} {{ block.group.name }}
-        </h3>
+        <h3>{{ block.group.name | emoji }} {{ block.group.name }}</h3>
         {% if block.group.id %}
         <form class="cat-row cat-row--group" method="post" action="/categories/{{ block.group.id }}/update">
           <input type="hidden" name="name" value="{{ block.group.name }}">
           <input type="hidden" name="parent" value="">
-          <input class="input input--sm input--icon" name="icon" maxlength="8"
-                 value="{{ block.group.icon or '' }}" placeholder="auto"
-                 autocomplete="off" aria-label="Group icon override">
+          <input type="hidden" name="icon" value="{{ block.group.icon or '' }}">
+          <button type="button" class="cat-icon-btn cat-icon-btn--sm" data-pick-icon
+                  title="Change group icon" aria-label="Change group icon">
+            <span data-icon-preview aria-hidden="true">{{ block.group.name | emoji }}</span>
+          </button>
           <button class="btn btn--sm" type="submit" title="Save icon">Save</button>
         </form>
         <form class="inline" method="post" action="/categories/{{ block.group.id }}/delete"
@@ -71,14 +65,15 @@
       <ul class="cat-list">
       {% for s in block.subs %}
         <li class="cat-list__item">
-          <span class="cat-emoji" aria-hidden="true">{{ s.name | emoji }}</span>
           <form class="cat-row" method="post" action="/categories/{{ s.id }}/update">
+            <button type="button" class="cat-icon-btn cat-icon-btn--sm" data-pick-icon
+                    title="Change icon" aria-label="Change icon for {{ s.name }}">
+              <span data-icon-preview aria-hidden="true">{{ s.name | emoji }}</span>
+            </button>
             <input class="input input--sm" name="name" value="{{ s.name }}" required>
             <input class="input input--sm" name="parent" list="parent-groups" autocomplete="off"
                    value="{{ s.parent }}" placeholder="parent group">
-            <input class="input input--sm input--icon" name="icon" maxlength="8"
-                   value="{{ s.icon or '' }}" placeholder="auto"
-                   autocomplete="off" aria-label="Icon override">
+            <input type="hidden" name="icon" value="{{ s.icon or '' }}">
             <button class="btn btn--sm" type="submit">Save</button>
           </form>
           <form class="inline" method="post" action="/categories/{{ s.id }}/delete"
@@ -103,22 +98,90 @@
     <option value="{{ g.name }}"></option>
   {% endfor %}
 </datalist>
+
+<!-- Icon picker modal — opens when any [data-pick-icon] circle is clicked. -->
+<div id="icon-picker-modal" class="modal" hidden aria-hidden="true">
+  <div class="modal__backdrop" data-modal-close></div>
+  <div class="modal__dialog modal__dialog--picker" role="dialog" aria-modal="true" aria-labelledby="icon-picker-title">
+    <header class="modal__head picker__head">
+      <h2 id="icon-picker-title">Select icon</h2>
+      <button type="button" class="detail__btn" data-modal-close aria-label="Close">×</button>
+    </header>
+    <div class="icon-picker-grid" role="listbox" aria-label="Icon choices">
+      <button type="button" class="icon-picker-grid__btn icon-picker-grid__btn--auto"
+              data-icon-choice data-icon="" title="Use auto-detected icon">
+        <span>auto</span>
+      </button>
+      {% for em in [
+        '🛒','🍽️','☕','🍔','🍕','🍦','🥖','🍿','🍪','🥂','💎','🍹','🥛','🧃','🍵','🥘','🥟','🫓','🍛',
+        '⛽','🚖','🛵','🏍️','🛺','🚇','🚆','✈️','🏨','🧳','🅿️','🛣️',
+        '💡','🔥','📱','📺','📶','💧','🏠','🔧','🔌',
+        '💇','🧴','💊','🩺','🏥','🦷','🛡️','💆','🧘',
+        '🏃','🏋️','🎬','🎮','🎤','📚','💻','📷','🛍️','👕','👟',
+        '🏫','🧸','👶','👨‍👩‍👧‍👦','🐾','🐶','🐱',
+        '👛','💰','💼','💳','📈','🐷','💸','🔁','🎉',
+        '🚶','🎁','🎂','💐','🏷️',
+      ] %}
+        <button type="button" class="icon-picker-grid__btn" data-icon-choice data-icon="{{ em }}" title="{{ em }}">{{ em }}</button>
+      {% endfor %}
+    </div>
+  </div>
+</div>
 {% endblock %}
 
 {% block scripts %}
 <script>
-  // Icon palette → fills the icon input above each palette
-  (function(){
-    document.querySelectorAll('.icon-palette__btn').forEach(function(btn){
-      btn.addEventListener('click', function(){
-        var palette = btn.closest('.icon-palette');
-        var form = palette && palette.closest('form');
-        var input = form && form.querySelector('input[name="icon"]');
-        if (input) {
-          input.value = btn.dataset.emoji || btn.textContent.trim();
-          input.focus();
-        }
-      });
+  (function () {
+    var modal  = document.getElementById('icon-picker-modal');
+    var grid   = modal && modal.querySelector('.icon-picker-grid');
+    if (!modal || !grid) return;
+
+    // Which icon-button (the circular preview) triggered the picker.
+    // We update its preview span + the hidden 'icon' input in its form.
+    var currentBtn = null;
+
+    function open(btn) {
+      currentBtn = btn;
+      modal.hidden = false;
+      modal.setAttribute('aria-hidden', 'false');
+      document.body.classList.add('modal-open');
+    }
+    function close() {
+      modal.hidden = true;
+      modal.setAttribute('aria-hidden', 'true');
+      document.body.classList.remove('modal-open');
+      if (currentBtn && typeof currentBtn.focus === 'function') currentBtn.focus();
+      currentBtn = null;
+    }
+
+    // Any [data-pick-icon] button opens the picker for itself.
+    document.querySelectorAll('[data-pick-icon]').forEach(function (btn) {
+      btn.addEventListener('click', function () { open(btn); });
+    });
+
+    // Click a grid icon → apply + close.
+    grid.addEventListener('click', function (e) {
+      var choice = e.target.closest('[data-icon-choice]');
+      if (!choice || !currentBtn) return;
+      var emoji = choice.dataset.icon || '';
+
+      // Update the preview span on the trigger button.
+      var preview = currentBtn.querySelector('[data-icon-preview]');
+      if (preview) preview.textContent = emoji || '❓';
+
+      // Update the hidden 'icon' input in the enclosing form.
+      var form  = currentBtn.closest('form');
+      var input = form && form.querySelector('input[name="icon"]');
+      if (input) input.value = emoji;
+
+      close();
+    });
+
+    modal.querySelectorAll('[data-modal-close]').forEach(function (el) {
+      el.addEventListener('click', close);
+    });
+    document.addEventListener('keydown', function (e) {
+      if (!modal.hidden && e.key === 'Escape') close();
     });
   })();
 </script>
