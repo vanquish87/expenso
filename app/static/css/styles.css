@@ -451,44 +451,49 @@ body.modal-open { overflow: hidden; }
   .form--entry-filter > :nth-child(5) { grid-column: 1;     grid-row: 4; }  /* apply */
   .form--entry-filter > :nth-child(6) { grid-column: 2;     grid-row: 4; justify-self: stretch; }  /* clear */
 
-  /* Ledger table → stacked card list. Each row turns into its own card:
-       header row  : date + category chip
-       middle row  : narration (full width, wraps freely)
-       footer row  : debit + credit + ✎🗑 actions
-     No more horizontal scroll on narrow viewports — every row fits inside
-     the card container. */
+  /* Ledger table → 2-line card layout.
+       row 1 : date (left) ........................... category chip (right)
+       row 2 : narration ............ money (debit OR credit) ......... ✎ 🗑
+     Only one of debit/credit is non-empty per entry, and the existing colour
+     code (red=.num--debit, green=.num--credit) already tells which is which,
+     so no DEBIT/CREDIT label is needed in the card. The empty <td> collapses
+     to zero size and both money tds share grid cell (col 2, row 2). */
   .ledger thead { display: none; }
   .ledger, .ledger tbody, .ledger tr { display: block; }
   .ledger tr {
     display: grid;
-    grid-template-columns: auto 1fr auto;
-    gap: 6px 12px;
-    padding: 12px;
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    gap: 8px 12px;
+    padding: 12px 14px;
     margin: 0 0 8px;
     border: 1px solid var(--border);
     border-radius: 10px;
     background: var(--surface-2);
   }
   .ledger td { display: block; padding: 0; border: 0; line-height: 1.4; }
-  /* Row 1 of the card */
-  .ledger td:nth-child(1) { grid-column: 1;     grid-row: 1; color: var(--text-dim); font-size: 13px; align-self: center; }
-  .ledger td:nth-child(2) { grid-column: 2 / 4; grid-row: 1; justify-self: end; }
-  /* Row 2: narration spans full width */
-  .ledger td:nth-child(3) { grid-column: 1 / 4; grid-row: 2; font-size: 14px; }
-  /* Row 3: debit | credit | actions */
-  .ledger td:nth-child(4) { grid-column: 1;     grid-row: 3; text-align: left; }
-  .ledger td:nth-child(5) { grid-column: 2;     grid-row: 3; text-align: left; }
-  .ledger td:nth-child(6) { grid-column: 3;     grid-row: 3; justify-self: end; align-self: center; }
-  /* Inline tiny labels so DEBIT / CREDIT aren't context-less without the thead. */
-  .ledger td:nth-child(4)::before,
-  .ledger td:nth-child(5)::before {
-    color: var(--muted); font-size: 10px; letter-spacing: .6px; margin-right: 6px;
+  /* Row 1: date (col 1, left) | category chip (cols 2-3, right) */
+  .ledger td:nth-child(1) {
+    grid-column: 1;     grid-row: 1;
+    color: var(--text-dim); font-size: 13px;
+    align-self: center;
   }
-  .ledger td:nth-child(4)::before { content: "DEBIT"; }
-  .ledger td:nth-child(5)::before { content: "CREDIT"; }
+  .ledger td:nth-child(2) { grid-column: 2 / 4; grid-row: 1; justify-self: end; }
+  /* Row 2: narration grows in col 1 | money in col 2 | actions in col 3 */
+  .ledger td:nth-child(3) {
+    grid-column: 1; grid-row: 2;
+    font-size: 14px; min-width: 0; align-self: center;
+  }
+  .ledger td:nth-child(4),
+  .ledger td:nth-child(5) {
+    grid-column: 2; grid-row: 2;
+    justify-self: end; align-self: center;
+    font-size: 15px; font-weight: 600;
+    text-align: right;
+  }
+  .ledger td:nth-child(6) { grid-column: 3; grid-row: 2; align-self: center; }
   .ledger__narr { min-width: 0; }
-  /* Bigger, more presentable category chip in the card view —
-     emoji bumped to ~18px so it reads at a glance. */
+  /* Bigger, more presentable category chip in card view —
+     emoji ~18-20px so it reads at a glance. */
   .ledger .chip { font-size: 13px; padding: 5px 12px; }
   .ledger .chip__emoji { font-size: 1.55em; vertical-align: -3px; margin-right: 4px; }
 }
