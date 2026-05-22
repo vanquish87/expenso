@@ -26,7 +26,8 @@
       nav.classList.remove('is-open');
       menuBtn.setAttribute('aria-expanded', 'false');
     };
-    menuBtn.addEventListener('click', () => {
+    menuBtn.addEventListener('click', (e) => {
+      e.stopPropagation();  // don't let the document-click handler immediately close it
       const open = nav.classList.toggle('is-open');
       menuBtn.setAttribute('aria-expanded', String(open));
     });
@@ -35,6 +36,12 @@
     });
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape' && nav.classList.contains('is-open')) close();
+    });
+    // Click anywhere outside the drawer to dismiss it.
+    document.addEventListener('click', (e) => {
+      if (!nav.classList.contains('is-open')) return;
+      if (e.target.closest('#topbar-nav, #menu-btn')) return;
+      close();
     });
   }
 

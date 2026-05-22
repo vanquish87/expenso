@@ -363,22 +363,28 @@ body.modal-open { overflow: hidden; }
   .ledger__narr { min-width: 220px; }
   .container { padding: 0 16px; }
 
-  /* Hamburger menu: brand on the left, ☰ pinned far right, nav collapses
-     into a drop-down drawer that flows to its own row when opened. */
-  .topbar { flex-wrap: wrap; gap: 12px; padding: 10px 16px; }
-  .topbar__brand { flex: 1 1 auto; }
-  .topbar__menu { display: inline-flex; align-items: center; justify-content: center; order: 2; }
-  .topbar__actions { order: 3; }
+  /* Hamburger menu: brand on the left, ☰ + Re-import on the right.
+     The nav becomes a floating drawer that overlays content — NOT a flex
+     row that pushes the page down. */
+  .topbar { gap: 12px; padding: 10px 16px; }
+  .topbar__brand { flex: 1 1 auto; min-width: 0; }
+  .topbar__menu { display: inline-flex; align-items: center; justify-content: center; }
   .topbar__nav {
-    order: 99;
-    flex: 1 1 100%;
+    /* Lifted out of the topbar flex flow so it doesn't take real estate. */
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 12px;
+    right: 12px;
+    z-index: 1001;
     flex-direction: column;
     gap: 4px;
-    margin-top: 4px;
     padding: 8px;
     background: var(--surface);
     border: 1px solid var(--border);
     border-radius: 10px;
+    box-shadow: 0 14px 36px rgba(0, 0, 0, 0.7);
+    max-height: calc(100vh - 80px);
+    overflow-y: auto;
     display: none;
   }
   .topbar__nav.is-open { display: flex; }
