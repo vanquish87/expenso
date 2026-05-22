@@ -25,6 +25,17 @@ def _parse_date(s: Optional[str]) -> Optional[_date]:
         return None
 
 
+def _parse_money(s: Optional[str]) -> float:
+    """Form blanks come through as '' for type=number; treat them as 0."""
+    s = (s or "").strip()
+    if not s:
+        return 0.0
+    try:
+        return float(s)
+    except ValueError:
+        return 0.0
+
+
 @router.get("", name="entries.index")
 def index(
     request: Request,
@@ -65,8 +76,8 @@ def create(
     date: str = Form(...),
     category: str = Form(...),
     narration: str = Form(""),
-    debit: float = Form(0.0),
-    credit: float = Form(0.0),
+    debit: str = Form(""),
+    credit: str = Form(""),
     svc: EntryService = Depends(get_entry_service),
 ):
     d = _parse_date(date)
@@ -77,8 +88,8 @@ def create(
             date_=d,
             category=category,
             narration=narration,
-            debit=debit,
-            credit=credit,
+            debit=_parse_money(debit),
+            credit=_parse_money(credit),
         )
     except ValidationError as e:
         return RedirectResponse(f"/entries?error={e}", status_code=303)
@@ -93,8 +104,8 @@ def update(
     date: str = Form(...),
     category: str = Form(...),
     narration: str = Form(""),
-    debit: float = Form(0.0),
-    credit: float = Form(0.0),
+    debit: str = Form(""),
+    credit: str = Form(""),
     svc: EntryService = Depends(get_entry_service),
 ):
     d = _parse_date(date)
@@ -106,8 +117,8 @@ def update(
             date_=d,
             category=category,
             narration=narration,
-            debit=debit,
-            credit=credit,
+            debit=_parse_money(debit),
+            credit=_parse_money(credit),
         )
     except NotFoundError:
         raise HTTPException(status_code=404, detail="entry not found")
