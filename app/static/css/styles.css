@@ -424,6 +424,14 @@ input[type="number"] { -moz-appearance: textfield; }
   text-decoration: none;
   color: inherit;
   transition: background .15s ease;
+  /* It's a <button> now (opens the detail modal) — kill the browser's
+     default button styles so it looks like a row, not a button. */
+  background: transparent;
+  border: 0;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  width: 100%;
 }
 .row__link:hover  { background: rgba(129, 140, 248, 0.08); }
 .row__link:focus-visible {
@@ -486,7 +494,18 @@ input[type="number"] { -moz-appearance: textfield; }
   .row__narr { font-size: 12px; }
 }
 
-/* Entry detail page (/entries/{id}) */
+/* Entry detail — rendered inside the click-to-open modal on /entries.
+   The .detail__head bleeds into the dialog/card's padding via negative
+   margin so its bottom border spans the full width. */
+.modal__dialog--detail {
+  width: min(560px, calc(100% - 32px));
+  max-height: calc(100vh - 32px);
+  overflow-y: auto;
+}
+.modal__dialog--detail .detail__head {
+  /* Modal dialog uses padding: 18px 20px 16px — match those for the bleed. */
+  margin: -18px -20px 16px;
+}
 .detail__head {
   display: flex;
   justify-content: space-between;

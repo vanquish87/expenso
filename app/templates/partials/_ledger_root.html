@@ -20,7 +20,14 @@
     <ul class="day__entries">
       {% for e in group %}
       <li class="row">
-        <a class="row__link" href="/entries/{{ e.id }}">
+        <button class="row__link" type="button"
+                data-entry-id="{{ e.id }}"
+                data-date="{{ e.date.isoformat() }}"
+                data-category="{{ e.category }}"
+                data-emoji="{{ e.category | emoji }}"
+                data-narration="{{ e.narration }}"
+                data-debit="{{ e.debit | intish }}"
+                data-credit="{{ e.credit | intish }}">
           <div class="row__icon" aria-hidden="true">{{ e.category | emoji }}</div>
           <div class="row__body">
             <div class="row__cat">{{ e.category }}</div>
@@ -29,7 +36,7 @@
           <div class="row__amount {% if e.debit > 0 %}is-debit{% else %}is-credit{% endif %}">
             ₹ {% if e.debit > 0 %}{{ e.debit | money_int }}{% else %}{{ e.credit | money_int }}{% endif %}
           </div>
-        </a>
+        </button>
       </li>
       {% endfor %}
     </ul>

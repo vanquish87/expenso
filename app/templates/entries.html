@@ -71,10 +71,86 @@
   </div>
 </div>
 
+<!-- Detail modal — populated by entries.js when a ledger row is clicked. -->
+<div id="entry-detail-modal" class="modal" hidden aria-hidden="true">
+  <div class="modal__backdrop" data-modal-close></div>
+  <div class="modal__dialog modal__dialog--detail" role="dialog" aria-labelledby="entry-detail-title" aria-modal="true">
+    <header class="detail__head">
+      <button type="button" class="detail__btn detail__close" data-modal-close aria-label="Close" title="Close">×</button>
+      <div class="detail__head-actions">
+        <a href="#edit-section" class="detail__btn" aria-label="Edit" title="Edit">✎</a>
+        <form id="entry-detail-delete-form" method="post" action=""
+              onsubmit="return confirm('Delete this entry?');">
+          <button type="submit" class="detail__btn detail__btn--danger" aria-label="Delete" title="Delete">🗑</button>
+        </form>
+      </div>
+    </header>
+
+    <div class="detail__hero">
+      <div class="detail__icon" data-detail-icon aria-hidden="true">🏷️</div>
+      <h2 id="entry-detail-title" class="detail__cat" data-detail-cat></h2>
+    </div>
+
+    <div class="detail__amount" data-detail-amount></div>
+
+    <ul class="detail__rows">
+      <li data-detail-narr-row hidden>
+        <span class="detail__row-icon" aria-hidden="true">📝</span>
+        <span data-detail-narr></span>
+      </li>
+      <li>
+        <span class="detail__row-icon" aria-hidden="true">📅</span>
+        <span data-detail-date></span>
+      </li>
+    </ul>
+
+    <details class="card card--collapsible detail__edit" id="edit-section">
+      <summary class="card__head">
+        <h3>✎ Edit</h3>
+        <span class="card__caret" aria-hidden="true">▾</span>
+      </summary>
+      <form id="entry-detail-edit-form" class="form form--stack" method="post" action="">
+        <label class="field">
+          <span class="field__label">Date</span>
+          <input class="input" name="date" type="date" required>
+        </label>
+        <label class="field">
+          <span class="field__label">Category</span>
+          <input class="input" name="category" list="all-categories" autocomplete="off"
+                 placeholder="e.g. electronics" required>
+        </label>
+        <label class="field">
+          <span class="field__label">Narration</span>
+          <input class="input" name="narration" maxlength="200" placeholder="e.g. chocolate, lassi…">
+        </label>
+        <div class="form__pair">
+          <label class="field">
+            <span class="field__label">Debit</span>
+            <input class="input num" name="debit" type="number" step="1" min="0" placeholder="0">
+          </label>
+          <label class="field">
+            <span class="field__label">Credit</span>
+            <input class="input num" name="credit" type="number" step="1" min="0" placeholder="0">
+          </label>
+        </div>
+        <p class="muted hint">Leave one blank (or 0) and fill the other.</p>
+        <footer class="modal__foot">
+          <button type="button" class="btn btn--ghost" data-modal-close>Cancel</button>
+          <button type="submit" class="btn btn--primary">Save changes</button>
+        </footer>
+      </form>
+    </details>
+  </div>
+</div>
+
 <!-- Shared category typeahead source: value = category, label = parent group (or "group"). -->
 <datalist id="all-categories">
   {% for c in categories %}
     <option value="{{ c.name }}">{% if c.parent %}{{ c.parent }}{% else %}group{% endif %}</option>
   {% endfor %}
 </datalist>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/entries.js" defer></script>
 {% endblock %}
