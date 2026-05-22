@@ -182,6 +182,12 @@ body {
   font-size: 11px; letter-spacing: .3px;
   border: 1px solid var(--border);
 }
+.chip__emoji {
+  font-size: 1.25em;
+  vertical-align: -1px;
+  margin-right: 2px;
+  letter-spacing: 0;
+}
 .chip--soft { background: rgba(99,102,241,.15); color: var(--primary-hi); border-color: rgba(99,102,241,.35); }
 
 /* forms */
@@ -481,6 +487,10 @@ body.modal-open { overflow: hidden; }
   .ledger td:nth-child(4)::before { content: "DEBIT"; }
   .ledger td:nth-child(5)::before { content: "CREDIT"; }
   .ledger__narr { min-width: 0; }
+  /* Bigger, more presentable category chip in the card view —
+     emoji bumped to ~18px so it reads at a glance. */
+  .ledger .chip { font-size: 13px; padding: 5px 12px; }
+  .ledger .chip__emoji { font-size: 1.55em; vertical-align: -3px; margin-right: 4px; }
 }
 
 @media (max-width: 800px) {

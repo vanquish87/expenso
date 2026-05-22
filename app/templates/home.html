@@ -48,7 +48,7 @@
       {% for e in recent %}
         <tr>
           <td>{{ e.date.isoformat() }}</td>
-          <td><span class="chip">{{ e.category | emoji }} {{ e.category }}</span></td>
+          <td><span class="chip"><span class="chip__emoji" aria-hidden="true">{{ e.category | emoji }}</span> {{ e.category }}</span></td>
           <td>{{ e.narration or "—" }}</td>
           <td class="num num--debit">{% if e.debit > 0 %}{{ e.debit | money }}{% endif %}</td>
           <td class="num num--credit">{% if e.credit > 0 %}{{ e.credit | money }}{% endif %}</td>
