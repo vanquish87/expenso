@@ -57,6 +57,59 @@ def analytics_insights(
     return {"insights": insights.generate()}
 
 
+# --- Drill-down endpoints powering the /analytics modal flow ---------------
+# Level 1 (groups) is already in /analytics/summary -> spend_by_group.
+# These three feed levels 2-4 on demand as the user opens each modal.
+
+
+@router.get("/analytics/group/{group}/subs")
+def analytics_subs_in_group(
+    group: str,
+    date_from: Optional[str] = None,
+    date_to: Optional[str] = None,
+    analytics: AnalyticsService = Depends(get_analytics_service),
+):
+    df, dt = _parse_date(date_from), _parse_date(date_to)
+    items = analytics.subs_in_group(group, df, dt)
+    total = sum(i["value"] for i in items)
+    return {"group": group, "total": round(total, 2), "items": items}
+
+
+@router.get("/analytics/category/{category}/months")
+def analytics_months_for_category(
+    category: str,
+    date_from: Optional[str] = None,
+    date_to: Optional[str] = None,
+    analytics: AnalyticsService = Depends(get_analytics_service),
+):
+    df, dt = _parse_date(date_from), _parse_date(date_to)
+    items = analytics.monthly_for_category(category, df, dt)
+    total = sum(i["value"] for i in items)
+    return {"category": category, "total": round(total, 2), "items": items}
+
+
+@router.get("/analytics/category/{category}/month/{year_month}/transactions")
+def analytics_transactions_in_month(
+    category: str,
+    year_month: str,
+    date_from: Optional[str] = None,
+    date_to: Optional[str] = None,
+    analytics: AnalyticsService = Depends(get_analytics_service),
+):
+    df, dt = _parse_date(date_from), _parse_date(date_to)
+    items = analytics.transactions_in_category_month(category, year_month, df, dt)
+    total_debit = sum(i["debit"] for i in items)
+    total_credit = sum(i["credit"] for i in items)
+    return {
+        "category": category,
+        "year_month": year_month,
+        "total_debit": round(total_debit, 2),
+        "total_credit": round(total_credit, 2),
+        "net": round(total_credit - total_debit, 2),
+        "items": items,
+    }
+
+
 @router.post("/import/excel")
 def reimport_xlsx(
     svc: ImportService = Depends(get_import_service),

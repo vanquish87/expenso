@@ -69,13 +69,102 @@ class AnalyticsService:
         date_from: Optional[date] = None,
         date_to: Optional[date] = None,
     ) -> List[Dict]:
+        from ..templating import _cat_emoji
         rows = self._scoped(date_from, date_to)
         agg: Dict[str, float] = defaultdict(float)
         for r in rows:
             agg[self._parent_of(r.category)] += r.debit
-        items = [{"label": k, "value": round(v, 2)} for k, v in agg.items() if v > 0]
+        items = [
+            {"label": k, "value": round(v, 2), "icon": _cat_emoji(k)}
+            for k, v in agg.items() if v > 0
+        ]
         items.sort(key=lambda x: x["value"], reverse=True)
         return items
+
+    def subs_in_group(
+        self,
+        group: str,
+        date_from: Optional[date] = None,
+        date_to: Optional[date] = None,
+    ) -> List[Dict]:
+        """Spend per sub-category inside ``group`` for the date range.
+
+        Also includes entries whose category name == the group itself
+        (a record tagged directly to the group rather than a sub).
+        """
+        from ..templating import _cat_emoji
+        rows = self._scoped(date_from, date_to)
+        agg: Dict[str, float] = defaultdict(float)
+        for r in rows:
+            parent = self._parent_of(r.category)
+            if parent == group or r.category == group:
+                agg[r.category] += r.debit
+        items = [
+            {"label": k, "value": round(v, 2), "icon": _cat_emoji(k)}
+            for k, v in agg.items() if v > 0
+        ]
+        items.sort(key=lambda x: x["value"], reverse=True)
+        return items
+
+    def monthly_for_category(
+        self,
+        category: str,
+        date_from: Optional[date] = None,
+        date_to: Optional[date] = None,
+    ) -> List[Dict]:
+        """Per-month debit totals for one sub-category within the range.
+
+        Returns sorted ascending by ``YYYY-MM``; empty months are omitted
+        (the chart on screen 3 of the reference shows zero-height bars
+        for months without spend, which we render client-side from this
+        gap-free list).
+        """
+        rows = self._scoped(date_from, date_to)
+        agg: Dict[str, float] = defaultdict(float)
+        for r in rows:
+            if r.category != category:
+                continue
+            key = f"{r.date.year:04d}-{r.date.month:02d}"
+            agg[key] += r.debit
+        return [
+            {"label": k, "value": round(v, 2)}
+            for k, v in sorted(agg.items())
+            if v > 0
+        ]
+
+    def transactions_in_category_month(
+        self,
+        category: str,
+        year_month: str,
+        date_from: Optional[date] = None,
+        date_to: Optional[date] = None,
+    ) -> List[Dict]:
+        """Individual entries for ``category`` within ``year_month``
+        (``YYYY-MM``), optionally further scoped by the outer date range.
+
+        Sorted newest-first by (date, timestamp), matching the ledger.
+        """
+        rows = self._scoped(date_from, date_to)
+        rows = [
+            r for r in rows
+            if r.category == category
+            and f"{r.date.year:04d}-{r.date.month:02d}" == year_month
+        ]
+        rows.sort(key=lambda r: (r.date, r.timestamp), reverse=True)
+        return [
+            {
+                "id": r.id,
+                "date": r.date.isoformat(),
+                "weekday": r.date.strftime("%A"),
+                "day": r.date.strftime("%d"),
+                "month_label": r.date.strftime("%B %Y"),
+                "category": r.category,
+                "narration": r.narration,
+                "debit": round(r.debit, 2),
+                "credit": round(r.credit, 2),
+            }
+            for r in rows
+        ]
 
     def top_subcategories(
         self,
