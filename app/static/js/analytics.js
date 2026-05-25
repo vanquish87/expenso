@@ -1,37 +1,50 @@
-// Analytics dashboard: pull /api/analytics/summary + /insights, render Chart.js charts.
+// Analytics drill-down: Groups → Sub-categories → Months → Transactions.
+//
+// Level 1 (groups) lives on the page; clicking a group opens the level-2
+// modal, which can open level 3 on top, which can open level 4 on top.
+// Each modal has its own backdrop and `data-drill-level`; we use that to
+// manage a stack so the back-button / Esc / backdrop closes one level
+// while the X button (data-modal-close-all) tears the whole stack down.
 (function () {
-  const fmt = (v) => 'Rs ' + (Number(v) || 0).toLocaleString(undefined, { maximumFractionDigits: 0 });
-  const palette = ['#6366f1', '#22d3ee', '#10b981', '#f59e0b', '#ef4444', '#a78bfa', '#f472b6', '#34d399', '#fbbf24', '#60a5fa', '#fb7185', '#c084fc'];
+  const fmt = (v) => 'Rs ' + (Math.round(Number(v) || 0)).toLocaleString();
+  const palette = [
+    '#6366f1', '#22d3ee', '#10b981', '#f59e0b', '#ef4444',
+    '#a78bfa', '#f472b6', '#34d399', '#fbbf24', '#60a5fa',
+    '#fb7185', '#c084fc', '#facc15', '#4ade80', '#38bdf8',
+  ];
 
+  // --- shared state --------------------------------------------------------
+  const state = {
+    dateFrom: '',
+    dateTo: '',
+    // remembered for the chain so the next level can scope itself
+    group: '',
+    category: '',
+    yearMonth: '',
+  };
+
+  // --- chart helpers -------------------------------------------------------
   const charts = {};
-  function destroy(id) {
-    if (charts[id]) { charts[id].destroy(); delete charts[id]; }
-  }
-
-  function setKpis(k) {
-    const map = {
-      total_debit: fmt(k.total_debit),
-      total_credit: fmt(k.total_credit),
-      net: fmt(k.net),
-      avg_daily_debit: fmt(k.avg_daily_debit),
-      n_entries: k.n_entries,
-      n_days: k.n_days,
-    };
-    document.querySelectorAll('[data-kpi]').forEach((el) => {
-      const key = el.getAttribute('data-kpi');
-      if (key in map) el.textContent = map[key];
-    });
-  }
+  function destroy(id) { if (charts[id]) { charts[id].destroy(); delete charts[id]; } }
 
   function doughnut(id, items) {
     destroy(id);
     const ctx = document.getElementById(id);
     if (!ctx) return;
+    if (!items.length) {
+      const c = ctx.getContext('2d');
+      c.clearRect(0, 0, ctx.width, ctx.height);
+      return;
+    }
     charts[id] = new Chart(ctx, {
       type: 'doughnut',
       data: {
-        labels: items.map((d) => d.label),
-        datasets: [{ data: items.map((d) => d.value), backgroundColor: items.map((_, i) => palette[i % palette.length]), borderWidth: 0 }],
+        labels: items.map((d) => (d.icon ? d.icon + ' ' : '') + d.label),
+        datasets: [{
+          data: items.map((d) => d.value),
+          backgroundColor: items.map((_, i) => palette[i % palette.length]),
+          borderWidth: 0,
+        }],
       },
       options: {
         responsive: true,
@@ -44,37 +57,16 @@
     });
   }
 
-  function bar(id, items, color = '#6366f1', horizontal = false) {
+  function bar(id, items, color = '#6366f1') {
     destroy(id);
     const ctx = document.getElementById(id);
     if (!ctx) return;
+    if (!items.length) return;
     charts[id] = new Chart(ctx, {
       type: 'bar',
       data: {
         labels: items.map((d) => d.label),
-        datasets: [{ data: items.map((d) => d.value), backgroundColor: color, borderRadius: 6, maxBarThickness: 28 }],
-      },
-      options: {
-        indexAxis: horizontal ? 'y' : 'x',
-        responsive: true,
-        plugins: {
-          legend: { display: false },
-          tooltip: { callbacks: { label: (c) => fmt(c.parsed[horizontal ? 'x' : 'y']) } },
-        },
-        scales: gridScales(),
-      },
-    });
-  }
-
-  function line(id, items, color = '#22d3ee', filled = false) {
-    destroy(id);
-    const ctx = document.getElementById(id);
-    if (!ctx) return;
-    charts[id] = new Chart(ctx, {
-      type: 'line',
-      data: {
-        labels: items.map((d) => d.label),
-        datasets: [{ data: items.map((d) => d.value), borderColor: color, backgroundColor: color + '33', fill: filled, tension: 0.25, pointRadius: items.length > 30 ? 0 : 2 }],
+        datasets: [{ data: items.map((d) => d.value), backgroundColor: color, borderRadius: 6, maxBarThickness: 36 }],
       },
       options: {
         responsive: true,
@@ -82,107 +74,322 @@
           legend: { display: false },
           tooltip: { callbacks: { label: (c) => fmt(c.parsed.y) } },
         },
-        scales: gridScales(),
+        scales: {
+          x: { ticks: { color: '#93a3c5', maxRotation: 0 }, grid: { color: 'rgba(255,255,255,0.05)' } },
+          y: { ticks: { color: '#93a3c5', callback: (v) => fmt(v) }, grid: { color: 'rgba(255,255,255,0.05)' } },
+        },
       },
     });
   }
 
-  function monthly(id, items) {
-    destroy(id);
-    const ctx = document.getElementById(id);
-    if (!ctx) return;
-    charts[id] = new Chart(ctx, {
-      type: 'bar',
-      data: {
-        labels: items.map((m) => m.label),
-        datasets: [
-          { label: 'Debit', data: items.map((m) => m.debit), backgroundColor: '#ef4444', borderRadius: 6 },
-          { label: 'Credit', data: items.map((m) => m.credit), backgroundColor: '#10b981', borderRadius: 6 },
-        ],
-      },
-      options: {
-        responsive: true,
-        plugins: { legend: { position: 'top', labels: { color: '#cbd5e1' } } },
-        scales: gridScales(),
-      },
-    });
+  // --- list builders -------------------------------------------------------
+  function listRow({ icon, label, amount, sub, level }) {
+    const li = document.createElement('li');
+    li.className = 'drill__row';
+    li.setAttribute('role', 'button');
+    li.tabIndex = 0;
+    li.dataset.drillLevel = String(level);
+    li.dataset.label = label;
+    li.innerHTML = `
+      <div class="drill__row-icon">${icon || '🏷️'}</div>
+      <div class="drill__row-body">
+        <div class="drill__row-label">${escapeHtml(label)}</div>
+        ${sub ? `<div class="drill__row-sub">${escapeHtml(sub)}</div>` : ''}
+      </div>
+      <div class="drill__row-amount is-debit">${fmt(amount)}</div>
+      <div class="drill__row-caret" aria-hidden="true">›</div>
+    `;
+    return li;
   }
 
-  function gridScales() {
-    return {
-      x: { ticks: { color: '#93a3c5', maxRotation: 0, autoSkip: true, maxTicksLimit: 12 }, grid: { color: 'rgba(255,255,255,0.05)' } },
-      y: { ticks: { color: '#93a3c5', callback: (v) => fmt(v) }, grid: { color: 'rgba(255,255,255,0.05)' } },
-    };
-  }
-
-  function renderTopTx(rows) {
-    const tbody = document.querySelector('#top-tx tbody');
-    if (!tbody) return;
-    tbody.innerHTML = '';
-    if (!rows.length) {
-      tbody.innerHTML = `<tr><td colspan="4" class="muted">No transactions in range.</td></tr>`;
-      return;
-    }
-    rows.forEach((r) => {
-      const tr = document.createElement('tr');
-      tr.innerHTML = `<td>${r.date}</td><td><span class="chip">${r.category}</span></td><td>${escapeHtml(r.narration || '—')}</td><td class="num num--debit">${fmt(r.amount)}</td>`;
-      tbody.appendChild(tr);
-    });
-  }
-
-  // Same kind -> emoji map the Python `kind_emoji` filter uses on home.html,
-  // so the analytics insights list looks identical.
-  const KIND_EMOJI = {
-    anomaly: '🚨', mom: '📈', concentration: '🎯',
-    runrate: '🔮', weekend: '🎉', biggest: '🏆', empty: '✨',
-  };
-
-  function renderInsights(items) {
-    const ul = document.getElementById('insights-list');
-    if (!ul) return;
+  function renderL1List(ul, items) {
     ul.innerHTML = '';
-    if (!items || !items.length) {
-      ul.innerHTML = `<li class="muted">No insights yet.</li>`;
+    if (!items.length) {
+      ul.innerHTML = '<li class="muted">No spend in this range.</li>';
       return;
     }
-    items.forEach((ins) => {
-      const li = document.createElement('li');
-      li.className = `insight insight--${ins.kind}`;
-      const ke = KIND_EMOJI[ins.kind] || '💡';
-      li.innerHTML = `<div class="insight__title">${ke} ${escapeHtml(ins.title)}</div><div class="insight__detail">${escapeHtml(ins.detail)}</div>`;
-      ul.appendChild(li);
+    items.forEach((g) => ul.appendChild(listRow({
+      icon: g.icon, label: g.label, amount: g.value, level: 1,
+    })));
+  }
+
+  function renderSubList(ul, items) {
+    ul.innerHTML = '';
+    if (!items.length) {
+      ul.innerHTML = '<li class="muted">No sub-categories here.</li>';
+      return;
+    }
+    items.forEach((s) => ul.appendChild(listRow({
+      icon: s.icon, label: s.label, amount: s.value, level: 2,
+    })));
+  }
+
+  function renderMonthList(ul, items) {
+    ul.innerHTML = '';
+    if (!items.length) {
+      ul.innerHTML = '<li class="muted">No months with spend.</li>';
+      return;
+    }
+    items.forEach((m) => ul.appendChild(listRow({
+      icon: '📅', label: m.label, sub: prettyMonth(m.label),
+      amount: m.value, level: 3,
+    })));
+  }
+
+  function renderTxList(root, txs) {
+    root.innerHTML = '';
+    if (!txs.length) {
+      root.innerHTML = '<p class="empty">No transactions in this month.</p>';
+      return;
+    }
+    // Group by date (newest first since payload is already sorted desc).
+    const byDate = new Map();
+    txs.forEach((t) => {
+      if (!byDate.has(t.date)) byDate.set(t.date, []);
+      byDate.get(t.date).push(t);
     });
+    byDate.forEach((rows, d) => {
+      const dayNet = rows.reduce((s, r) => s + (r.credit - r.debit), 0);
+      const day = document.createElement('article');
+      day.className = 'day';
+      const dt = new Date(d + 'T00:00:00');
+      day.innerHTML = `
+        <header class="day__head">
+          <div class="day__num">${String(dt.getDate()).padStart(2, '0')}</div>
+          <div class="day__meta">
+            <div class="day__weekday">${rows[0].weekday}</div>
+            <div class="day__month">${rows[0].month_label}</div>
+          </div>
+          <div class="day__total${dayNet > 0 ? ' is-credit' : ''}">${fmt(Math.abs(dayNet))}</div>
+        </header>
+        <ul class="day__entries"></ul>
+      `;
+      const ul = day.querySelector('.day__entries');
+      rows.forEach((r) => {
+        const li = document.createElement('li');
+        li.className = 'row';
+        const amount = r.debit > 0 ? r.debit : r.credit;
+        const cls = r.debit > 0 ? 'is-debit' : 'is-credit';
+        li.innerHTML = `
+          <div class="row__link row__link--readonly">
+            <div class="row__icon">${_currentSubIcon}</div>
+            <div class="row__body">
+              <div class="row__cat">${escapeHtml(r.category)}</div>
+              ${r.narration ? `<div class="row__narr">${escapeHtml(r.narration)}</div>` : ''}
+            </div>
+            <div class="row__amount ${cls}">₹ ${Math.round(amount).toLocaleString()}</div>
+          </div>
+        `;
+        ul.appendChild(li);
+      });
+      root.appendChild(day);
+    });
+  }
+
+  // Icon used for L4 transaction rows — all rows in a level-4 modal share
+  // one category, so we reuse the icon we already had at L3 open time.
+  let _currentSubIcon = '🏷️';
+
+  function prettyMonth(ym) {
+    // "2026-04" -> "April 2026"
+    const m = /^(\d{4})-(\d{2})$/.exec(ym);
+    if (!m) return ym;
+    const names = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+    return `${names[parseInt(m[2], 10) - 1]} ${m[1]}`;
   }
 
   function escapeHtml(s) {
-    return String(s ?? '').replace(/[&<>"']/g, (m) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]));
+    return String(s ?? '').replace(/[&<>"']/g, (m) => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[m]));
   }
 
-  async function load(form) {
-    const params = new URLSearchParams();
+  // --- monthly average -----------------------------------------------------
+  // n = number of distinct months covered by the date range; we use the
+  // range when set, otherwise infer from the data we already have. Avoids
+  // a divide-by-zero so a "first day of the period" view doesn't NaN.
+  function monthsCoveredByState() {
+    if (state.dateFrom && state.dateTo) {
+      return monthsBetween(state.dateFrom, state.dateTo);
+    }
+    return 1;
+  }
+
+  function monthsBetween(a, b) {
+    const da = new Date(a + 'T00:00:00');
+    const db = new Date(b + 'T00:00:00');
+    return Math.max(1, (db.getFullYear() - da.getFullYear()) * 12 + (db.getMonth() - da.getMonth()) + 1);
+  }
+
+  // --- API plumbing --------------------------------------------------------
+  function rangeQS() {
+    const p = new URLSearchParams();
+    if (state.dateFrom) p.set('date_from', state.dateFrom);
+    if (state.dateTo)   p.set('date_to',   state.dateTo);
+    const s = p.toString();
+    return s ? '?' + s : '';
+  }
+
+  async function getJson(url) {
+    const r = await fetch(url);
+    if (!r.ok) throw new Error(`${url} -> ${r.status}`);
+    return r.json();
+  }
+
+  // --- modal stack ---------------------------------------------------------
+  // We never have more than 3 modals open (levels 2-4). Order on top is the
+  // "current" — Esc / Back closes it. X (close-all) tears them all down.
+  const stack = [];
+
+  function pushModal(modalId) {
+    const m = document.getElementById(modalId);
+    if (!m) return;
+    // z-index per depth: 50 (base modal) -> 60 -> 70
+    m.style.zIndex = String(50 + stack.length * 10);
+    m.hidden = false;
+    m.setAttribute('aria-hidden', 'false');
+    stack.push(m);
+    document.body.classList.add('modal-open');
+  }
+
+  function popTop() {
+    const top = stack.pop();
+    if (!top) return;
+    top.hidden = true;
+    top.setAttribute('aria-hidden', 'true');
+    if (!stack.length) document.body.classList.remove('modal-open');
+  }
+
+  function popAll() {
+    while (stack.length) {
+      const top = stack.pop();
+      top.hidden = true;
+      top.setAttribute('aria-hidden', 'true');
+    }
+    document.body.classList.remove('modal-open');
+  }
+
+  // --- Level 1: groups on the page -----------------------------------------
+  async function loadL1(form) {
     if (form) {
       const fd = new FormData(form);
-      for (const [k, v] of fd.entries()) if (v) params.set(k, v);
+      state.dateFrom = fd.get('date_from') || '';
+      state.dateTo   = fd.get('date_to')   || '';
     }
-    const [s, i] = await Promise.all([
-      fetch('/api/analytics/summary?' + params.toString()).then((r) => r.json()),
-      fetch('/api/analytics/insights').then((r) => r.json()),
-    ]);
-    setKpis(s.kpis);
-    doughnut('chart-groups', s.spend_by_group);
-    bar('chart-subs', s.top_subcategories, '#22d3ee', true);
-    line('chart-daily', s.daily, '#6366f1', false);
-    line('chart-cum', s.cumulative, '#10b981', true);
-    bar('chart-weekday', s.weekday, '#f59e0b', false);
-    monthly('chart-monthly', s.monthly);
-    renderTopTx(s.top_transactions);
-    renderInsights(i.insights);
+    const s = await getJson('/api/analytics/summary' + rangeQS());
+    const groups = s.spend_by_group || [];
+    const total = groups.reduce((acc, g) => acc + g.value, 0);
+    const months = monthsCoveredByState();
+
+    document.querySelector('[data-l1-total]').textContent = fmt(total);
+    document.querySelector('[data-l1-monthly]').textContent = fmt(total / months);
+    document.querySelector('[data-l1-count]').textContent = groups.length;
+
+    doughnut('chart-l1', groups);
+    renderL1List(document.getElementById('drill-l1-list'), groups);
   }
 
+  // --- Level 2: sub-categories under one group -----------------------------
+  async function openSub(group) {
+    state.group = group;
+    const data = await getJson(`/api/analytics/group/${encodeURIComponent(group)}/subs${rangeQS()}`);
+    const items = data.items || [];
+    const total = data.total || 0;
+    const months = monthsCoveredByState();
+
+    // Use the icon of the first item (or fallback) for the modal title icon.
+    const groupIcon = pickGroupIcon(group, items);
+    document.querySelector('[data-sub-icon]').textContent = groupIcon;
+    document.querySelector('[data-sub-title]').textContent = group;
+    document.querySelector('[data-sub-total]').textContent   = fmt(total);
+    document.querySelector('[data-sub-monthly]').textContent = fmt(total / months);
+
+    doughnut('chart-sub', items);
+    renderSubList(document.getElementById('drill-sub-list'), items);
+    pushModal('modal-sub');
+  }
+
+  // The group-level icon isn't in the subs payload directly — we already
+  // have it from the L1 list. Fall back to the row that was clicked.
+  let _lastGroupIcon = '🏷️';
+  function pickGroupIcon(group, items) {
+    return _lastGroupIcon;
+  }
+
+  // --- Level 3: months for one sub-category --------------------------------
+  async function openMonth(category, icon) {
+    state.category = category;
+    _currentSubIcon = icon || '🏷️';
+    const data = await getJson(`/api/analytics/category/${encodeURIComponent(category)}/months${rangeQS()}`);
+    const items = data.items || [];
+    const total = data.total || 0;
+    const monthsCount = items.length || 1;
+
+    document.querySelector('[data-month-icon]').textContent = icon || '🏷️';
+    document.querySelector('[data-month-title]').textContent = category;
+    document.querySelector('[data-month-total]').textContent   = fmt(total);
+    document.querySelector('[data-month-monthly]').textContent = fmt(total / monthsCount);
+
+    bar('chart-month', items, '#ef4444');
+    renderMonthList(document.getElementById('drill-month-list'), items);
+    pushModal('modal-month');
+  }
+
+  // --- Level 4: transactions for (sub-category, month) ---------------------
+  async function openTx(category, yearMonth) {
+    state.yearMonth = yearMonth;
+    const data = await getJson(
+      `/api/analytics/category/${encodeURIComponent(category)}/month/${yearMonth}/transactions${rangeQS()}`
+    );
+    const items = data.items || [];
+
+    document.querySelector('[data-tx-title]').textContent =
+      `${category} · ${prettyMonth(yearMonth)}`;
+    document.querySelector('[data-tx-count]').textContent =
+      `${items.length} result${items.length === 1 ? '' : 's'}`;
+    document.querySelector('[data-tx-credit]').textContent = '₹ ' + Math.round(data.total_credit).toLocaleString();
+    document.querySelector('[data-tx-debit]').textContent  = '₹ ' + Math.round(data.total_debit).toLocaleString();
+    const net = data.net;
+    const netEl = document.querySelector('[data-tx-net]');
+    netEl.textContent = (net >= 0 ? '+' : '−') + '₹ ' + Math.round(Math.abs(net)).toLocaleString();
+    netEl.className = net >= 0 ? 'is-credit' : 'is-debit';
+
+    renderTxList(document.getElementById('drill-tx-list'), items);
+    pushModal('modal-tx');
+  }
+
+  // --- click delegation: row clicks open the next level --------------------
+  document.addEventListener('click', (e) => {
+    const row = e.target.closest('.drill__row');
+    if (!row) return;
+    const lvl = parseInt(row.dataset.drillLevel, 10);
+    const label = row.dataset.label;
+    if (lvl === 1) {
+      // remember the icon for the modal title (icon is in the first child)
+      const ic = row.querySelector('.drill__row-icon');
+      _lastGroupIcon = ic ? ic.textContent : '🏷️';
+      openSub(label);
+    } else if (lvl === 2) {
+      const ic = row.querySelector('.drill__row-icon');
+      openMonth(label, ic ? ic.textContent : '🏷️');
+    } else if (lvl === 3) {
+      // label is "YYYY-MM"
+      openTx(state.category, label);
+    }
+  });
+
+  // --- modal close wiring (back / Esc / X) ---------------------------------
+  document.addEventListener('click', (e) => {
+    if (e.target.closest('[data-modal-close-all]')) { popAll(); return; }
+    if (e.target.closest('[data-modal-close]'))     { popTop(); return; }
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && stack.length) popTop();
+  });
+
+  // --- init ----------------------------------------------------------------
   function init() {
     const form = document.getElementById('range-form');
-    if (form) form.addEventListener('submit', (ev) => { ev.preventDefault(); load(form); });
-    load(form);
+    if (form) form.addEventListener('submit', (ev) => { ev.preventDefault(); loadL1(form); });
+    loadL1(form);
   }
 
   if (window.Chart) init();
