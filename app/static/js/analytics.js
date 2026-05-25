@@ -52,11 +52,17 @@
       },
       options: {
         responsive: true,
+        // Let CSS control the height — keeps the donut from blowing up to
+        // fill the modal width with a 2:1 aspect ratio.
+        maintainAspectRatio: false,
         plugins: {
-          legend: { position: 'right', labels: { color: '#cbd5e1', boxWidth: 12, font: { size: 11 } } },
+          legend: {
+            position: 'right',
+            labels: { color: '#cbd5e1', boxWidth: 10, boxHeight: 10, font: { size: 10 }, padding: 6 },
+          },
           tooltip: { callbacks: { label: (c) => `${c.label}: ${fmt(c.parsed)}` } },
         },
-        cutout: '60%',
+        cutout: '62%',
       },
     });
   }
@@ -74,13 +80,14 @@
       },
       options: {
         responsive: true,
+        maintainAspectRatio: false,
         plugins: {
           legend: { display: false },
           tooltip: { callbacks: { label: (c) => fmt(c.parsed.y) } },
         },
         scales: {
-          x: { ticks: { color: '#93a3c5', maxRotation: 0 }, grid: { color: 'rgba(255,255,255,0.05)' } },
-          y: { ticks: { color: '#93a3c5', callback: (v) => fmt(v) }, grid: { color: 'rgba(255,255,255,0.05)' } },
+          x: { ticks: { color: '#93a3c5', maxRotation: 0, font: { size: 10 } }, grid: { color: 'rgba(255,255,255,0.05)' } },
+          y: { ticks: { color: '#93a3c5', font: { size: 10 }, callback: (v) => fmt(v) }, grid: { color: 'rgba(255,255,255,0.05)' } },
         },
       },
     });
@@ -195,6 +202,7 @@
           <div class="row__amount ${cls}">₹ ${Math.round(amount).toLocaleString()}</div>
         `;
         li.appendChild(btn);
+        ul.appendChild(li);
       });
       root.appendChild(day);
     });

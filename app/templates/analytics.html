@@ -42,7 +42,7 @@
 
 <div class="card">
   <header class="card__head"><h2>Spend by group</h2></header>
-  <canvas id="chart-l1" height="220"></canvas>
+  <div class="chart-wrap"><canvas id="chart-l1"></canvas></div>
 </div>
 
 <div class="card">
@@ -56,7 +56,7 @@
      LEVEL 2 — Sub-categories in one group (modal)
      ============================================================ -->
 <div id="modal-sub" class="modal modal--drill" hidden aria-hidden="true" data-drill-level="2">
-  <div class="modal__backdrop" data-modal-close></div>
+  <div class="modal__backdrop" data-modal-close-all></div>
   <div class="modal__dialog modal__dialog--drill" role="dialog" aria-modal="true">
     <header class="drill__head">
       <button type="button" class="drill__btn" data-modal-close aria-label="Back" title="Back">←</button>
@@ -81,7 +81,7 @@
      LEVEL 3 — Months for one sub-category (modal)
      ============================================================ -->
 <div id="modal-month" class="modal modal--drill" hidden aria-hidden="true" data-drill-level="3">
-  <div class="modal__backdrop" data-modal-close></div>
+  <div class="modal__backdrop" data-modal-close-all></div>
   <div class="modal__dialog modal__dialog--drill" role="dialog" aria-modal="true">
     <header class="drill__head">
       <button type="button" class="drill__btn" data-modal-close aria-label="Back" title="Back">←</button>
@@ -106,7 +106,7 @@
      LEVEL 4 — Transactions in one (sub-category, month) (modal)
      ============================================================ -->
 <div id="modal-tx" class="modal modal--drill" hidden aria-hidden="true" data-drill-level="4">
-  <div class="modal__backdrop" data-modal-close></div>
+  <div class="modal__backdrop" data-modal-close-all></div>
   <div class="modal__dialog modal__dialog--drill" role="dialog" aria-modal="true">
     <header class="drill__head">
       <button type="button" class="drill__btn" data-modal-close aria-label="Back" title="Back">←</button>
@@ -135,7 +135,7 @@
      L4 list under the hood, then peel back to it.
      ============================================================ -->
 <div id="modal-entry" class="modal modal--drill" hidden aria-hidden="true" data-drill-level="5">
-  <div class="modal__backdrop" data-modal-close></div>
+  <div class="modal__backdrop" data-modal-close-all></div>
   <div class="modal__dialog modal__dialog--detail" data-mode="view"
        role="dialog" aria-labelledby="drill-entry-title" aria-modal="true">
     <header class="detail__head">
