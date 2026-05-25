@@ -126,6 +126,80 @@
     </div>
   </div>
 </div>
+
+<!-- ============================================================
+     LEVEL 5 — One transaction (view / edit / delete)
+     Reuses the exact same modal layout as /entries so the
+     interaction is familiar: pencil swaps to edit form, X closes,
+     trash deletes (with confirm). On save/delete we re-fetch the
+     L4 list under the hood, then peel back to it.
+     ============================================================ -->
+<div id="modal-entry" class="modal modal--drill" hidden aria-hidden="true" data-drill-level="5">
+  <div class="modal__backdrop" data-modal-close></div>
+  <div class="modal__dialog modal__dialog--detail" data-mode="view"
+       role="dialog" aria-labelledby="drill-entry-title" aria-modal="true">
+    <header class="detail__head">
+      <button type="button" class="detail__btn detail__close" data-modal-close aria-label="Back" title="Back">←</button>
+      <div class="detail__head-actions">
+        <button type="button" class="detail__btn" data-entry-edit aria-label="Edit" title="Edit">✎</button>
+        <button type="button" class="detail__btn detail__btn--danger" data-entry-delete aria-label="Delete" title="Delete">🗑</button>
+      </div>
+    </header>
+
+    <!-- VIEW mode -->
+    <section class="detail__view" data-entry-view>
+      <div class="detail__hero">
+        <div class="detail__icon" data-entry-icon aria-hidden="true">🏷️</div>
+        <h2 id="drill-entry-title" class="detail__cat" data-entry-cat></h2>
+      </div>
+      <div class="detail__amount" data-entry-amount></div>
+      <ul class="detail__rows">
+        <li data-entry-narr-row hidden>
+          <span class="detail__row-icon" aria-hidden="true">📝</span>
+          <span data-entry-narr></span>
+        </li>
+        <li>
+          <span class="detail__row-icon" aria-hidden="true">📅</span>
+          <span data-entry-date></span>
+        </li>
+      </ul>
+    </section>
+
+    <!-- EDIT mode -->
+    <section class="detail__edit" data-entry-edit-view>
+      <h2 class="detail__edit-title">Edit entry</h2>
+      <form id="drill-entry-edit-form" class="form form--stack">
+        <label class="field">
+          <span class="field__label">Date</span>
+          <input class="input" name="date" type="date" required>
+        </label>
+        <label class="field">
+          <span class="field__label">Category</span>
+          <input class="input" name="category" autocomplete="off" required>
+        </label>
+        <label class="field">
+          <span class="field__label">Narration</span>
+          <input class="input" name="narration" maxlength="200">
+        </label>
+        <div class="form__pair">
+          <label class="field">
+            <span class="field__label">Debit</span>
+            <input class="input num" name="debit" type="number" step="1" min="0" placeholder="0">
+          </label>
+          <label class="field">
+            <span class="field__label">Credit</span>
+            <input class="input num" name="credit" type="number" step="1" min="0" placeholder="0">
+          </label>
+        </div>
+        <p class="muted hint">Leave one blank (or 0) and fill the other.</p>
+        <footer class="modal__foot">
+          <button type="button" class="btn btn--ghost" data-entry-cancel>Cancel</button>
+          <button type="submit" class="btn btn--primary">Save changes</button>
+        </footer>
+      </form>
+    </section>
+  </div>
+</div>
 {% endblock %}
 
 {% block scripts %}

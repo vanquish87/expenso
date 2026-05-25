@@ -174,17 +174,27 @@
         li.className = 'row';
         const amount = r.debit > 0 ? r.debit : r.credit;
         const cls = r.debit > 0 ? 'is-debit' : 'is-credit';
-        li.innerHTML = `
-          <div class="row__link row__link--readonly">
-            <div class="row__icon">${_currentSubIcon}</div>
-            <div class="row__body">
-              <div class="row__cat">${escapeHtml(r.category)}</div>
-              ${r.narration ? `<div class="row__narr">${escapeHtml(r.narration)}</div>` : ''}
-            </div>
-            <div class="row__amount ${cls}">₹ ${Math.round(amount).toLocaleString()}</div>
+        // Same shape as /entries rows: data-* attrs carry everything the
+        // L5 modal needs, so opening it is zero-fetch.
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'row__link drill__tx-row';
+        btn.dataset.entryId  = r.id;
+        btn.dataset.date     = r.date;
+        btn.dataset.category = r.category;
+        btn.dataset.emoji    = _currentSubIcon;
+        btn.dataset.narration = r.narration || '';
+        btn.dataset.debit    = r.debit;
+        btn.dataset.credit   = r.credit;
+        btn.innerHTML = `
+          <div class="row__icon">${_currentSubIcon}</div>
+          <div class="row__body">
+            <div class="row__cat">${escapeHtml(r.category)}</div>
+            ${r.narration ? `<div class="row__narr">${escapeHtml(r.narration)}</div>` : ''}
           </div>
+          <div class="row__amount ${cls}">₹ ${Math.round(amount).toLocaleString()}</div>
         `;
-        ul.appendChild(li);
+        li.appendChild(btn);
       });
       root.appendChild(day);
     });
@@ -233,15 +243,20 @@
   }
 
   // --- modal stack ---------------------------------------------------------
-  // We never have more than 3 modals open (levels 2-4). Order on top is the
-  // "current" — Esc / Back closes it. X (close-all) tears them all down.
+  // Only one drill modal is visible at a time. We still keep a stack so
+  // the back arrow / Esc / backdrop can re-show the previous level. X
+  // (data-modal-close-all) tears everything down at once.
   const stack = [];
 
   function pushModal(modalId) {
     const m = document.getElementById(modalId);
     if (!m) return;
-    // z-index per depth: 50 (base modal) -> 60 -> 70
-    m.style.zIndex = String(50 + stack.length * 10);
+    // Hide whatever is currently on top before showing the new one.
+    if (stack.length) {
+      const prev = stack[stack.length - 1];
+      prev.hidden = true;
+      prev.setAttribute('aria-hidden', 'true');
+    }
     m.hidden = false;
     m.setAttribute('aria-hidden', 'false');
     stack.push(m);
@@ -253,7 +268,16 @@
     if (!top) return;
     top.hidden = true;
     top.setAttribute('aria-hidden', 'true');
-    if (!stack.length) document.body.classList.remove('modal-open');
+    if (stack.length) {
+      // Re-show the previous level — its DOM is still populated so we
+      // don't need to re-fetch (callers that need a refresh after edit /
+      // delete do it explicitly before popping).
+      const prev = stack[stack.length - 1];
+      prev.hidden = false;
+      prev.setAttribute('aria-hidden', 'false');
+    } else {
+      document.body.classList.remove('modal-open');
+    }
   }
 
   function popAll() {
@@ -336,6 +360,16 @@
   // --- Level 4: transactions for (sub-category, month) ---------------------
   async function openTx(category, yearMonth) {
     state.yearMonth = yearMonth;
+    await refreshTx();
+    pushModal('modal-tx');
+  }
+
+  // Pull + paint L4 contents without touching the modal stack. Called on
+  // open AND after any L5 edit/delete so the list reflects reality before
+  // we peel back to it.
+  async function refreshTx() {
+    const category = state.category;
+    const yearMonth = state.yearMonth;
     const data = await getJson(
       `/api/analytics/category/${encodeURIComponent(category)}/month/${yearMonth}/transactions${rangeQS()}`
     );
@@ -353,27 +387,142 @@
     netEl.className = net >= 0 ? 'is-credit' : 'is-debit';
 
     renderTxList(document.getElementById('drill-tx-list'), items);
-    pushModal('modal-tx');
+  }
+
+  // --- Level 5: one transaction view / edit / delete -----------------------
+  const entryModal = () => document.getElementById('modal-entry');
+  const entryDialog = () => entryModal().querySelector('.modal__dialog');
+  let _currentEntryId = null;
+
+  function setEntryMode(mode) { entryDialog().dataset.mode = mode; }
+
+  function paintEntryView(d) {
+    const debit  = parseFloat(d.debit)  || 0;
+    const credit = parseFloat(d.credit) || 0;
+    const isDebit = debit > 0;
+    const shown   = isDebit ? debit : credit;
+
+    entryModal().querySelector('[data-entry-icon]').textContent = d.emoji || '🏷️';
+    entryModal().querySelector('[data-entry-cat]').textContent  = d.category || '';
+    const amt = entryModal().querySelector('[data-entry-amount]');
+    amt.textContent = '₹ ' + Math.round(shown).toLocaleString();
+    amt.classList.toggle('is-debit',  isDebit);
+    amt.classList.toggle('is-credit', !isDebit);
+
+    const narrRow = entryModal().querySelector('[data-entry-narr-row]');
+    const narr    = entryModal().querySelector('[data-entry-narr]');
+    if (d.narration) { narr.textContent = d.narration; narrRow.hidden = false; }
+    else { narrRow.hidden = true; }
+
+    entryModal().querySelector('[data-entry-date]').textContent = fmtHumanDate(d.date);
+  }
+
+  function paintEntryForm(d) {
+    const form = document.getElementById('drill-entry-edit-form');
+    const isDebit = (parseFloat(d.debit) || 0) > 0;
+    form.elements['date'].value      = d.date;
+    form.elements['category'].value  = d.category;
+    form.elements['narration'].value = d.narration || '';
+    form.elements['debit'].value     = isDebit  ? d.debit  : '';
+    form.elements['credit'].value    = !isDebit ? d.credit : '';
+  }
+
+  function fmtHumanDate(iso) {
+    const d = new Date(iso + 'T00:00:00');
+    if (Number.isNaN(d.getTime())) return iso;
+    const wkdays = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+    const dd = String(d.getDate()).padStart(2, '0');
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    return `${wkdays[d.getDay()]}, ${dd}-${mm}-${d.getFullYear()}`;
+  }
+
+  function openEntry(rowBtn) {
+    _currentEntryId = rowBtn.dataset.entryId;
+    paintEntryView(rowBtn.dataset);
+    paintEntryForm(rowBtn.dataset);
+    setEntryMode('view');
+    pushModal('modal-entry');
+  }
+
+  async function saveEntry(ev) {
+    ev.preventDefault();
+    if (!_currentEntryId) return;
+    const form = document.getElementById('drill-entry-edit-form');
+    const fd = new FormData(form);
+    try {
+      const r = await fetch(`/entries/${_currentEntryId}/update`, {
+        method: 'POST',
+        body: fd,
+        // Use the HX header so the entries router gives us a plain-text
+        // error body on validation failure (vs. a full HTML redirect we'd
+        // then have to parse).
+        headers: { 'HX-Request': 'true' },
+      });
+      if (!r.ok) throw new Error((await r.text()) || 'Save failed');
+    } catch (e) {
+      alert('Save failed: ' + (e.message || e));
+      return;
+    }
+    await refreshTx();   // L4 list reflects the edit
+    popTop();            // close L5; L4 (now refreshed) shows
+    _currentEntryId = null;
+  }
+
+  async function deleteEntry() {
+    if (!_currentEntryId) return;
+    if (!confirm('Delete this entry?')) return;
+    try {
+      const r = await fetch(`/entries/${_currentEntryId}/delete`, {
+        method: 'POST',
+        headers: { 'HX-Request': 'true' },
+      });
+      if (!r.ok) throw new Error('Delete failed');
+    } catch (e) {
+      alert(e.message || String(e));
+      return;
+    }
+    await refreshTx();
+    popTop();
+    _currentEntryId = null;
   }
 
   // --- click delegation: row clicks open the next level --------------------
   document.addEventListener('click', (e) => {
+    // L1 / L2 / L3 drill rows
     const row = e.target.closest('.drill__row');
-    if (!row) return;
-    const lvl = parseInt(row.dataset.drillLevel, 10);
-    const label = row.dataset.label;
-    if (lvl === 1) {
-      // remember the icon for the modal title (icon is in the first child)
-      const ic = row.querySelector('.drill__row-icon');
-      _lastGroupIcon = ic ? ic.textContent : '🏷️';
-      openSub(label);
-    } else if (lvl === 2) {
-      const ic = row.querySelector('.drill__row-icon');
-      openMonth(label, ic ? ic.textContent : '🏷️');
-    } else if (lvl === 3) {
-      // label is "YYYY-MM"
-      openTx(state.category, label);
+    if (row) {
+      const lvl = parseInt(row.dataset.drillLevel, 10);
+      const label = row.dataset.label;
+      if (lvl === 1) {
+        const ic = row.querySelector('.drill__row-icon');
+        _lastGroupIcon = ic ? ic.textContent : '🏷️';
+        openSub(label);
+      } else if (lvl === 2) {
+        const ic = row.querySelector('.drill__row-icon');
+        openMonth(label, ic ? ic.textContent : '🏷️');
+      } else if (lvl === 3) {
+        openTx(state.category, label);
+      }
+      return;
     }
+    // L4 transaction row -> open L5
+    const txRow = e.target.closest('.drill__tx-row');
+    if (txRow) { openEntry(txRow); return; }
+
+    // L5 buttons
+    if (e.target.closest('[data-entry-edit]'))   { setEntryMode('edit'); return; }
+    if (e.target.closest('[data-entry-cancel]')) {
+      // Re-paint form from the current dataset on the row that opened it,
+      // so half-typed values are dropped. Easiest: just toggle modes.
+      setEntryMode('view');
+      return;
+    }
+    if (e.target.closest('[data-entry-delete]')) { deleteEntry(); return; }
+  });
+
+  // L5 edit form submission
+  document.addEventListener('submit', (e) => {
+    if (e.target.id === 'drill-entry-edit-form') saveEntry(e);
   });
 
   // --- modal close wiring (back / Esc / X) ---------------------------------
