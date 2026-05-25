@@ -58,6 +58,11 @@ the black window to stop.
 - 💾 **Your data, your folder** — point `EXPENSO_DATA_DIR` at any drive
   (external SSD, Dropbox, …) via `.env`. The CSV files themselves are
   **never deleted** by the app, only ever rewritten atomically.
+- 🛟 **Rolling backups on every shutdown** — each Ctrl+C snapshots your
+  data dir into a timestamped folder under `EXPENSO_BACKUP_DIR`, keeping
+  the newest 5. A built-in **freeze** kicks in if it looks like data was
+  wiped or mass-deleted, so older known-good snapshots can't be aged out
+  by a disaster. 🔒
 
 ---
 
@@ -89,8 +94,9 @@ data/
 
 Each entry carries a **timestamp** alongside its date, so the ledger sorts
 deterministically — newest entries on top within each day, no random shuffle.
-Want to back up? Copy that folder. Want to start over? Delete it — the app
-re-seeds from your spreadsheet on the next run. 🌱
+Want to start over? Delete the folder — the app re-seeds from your
+spreadsheet on the next run. 🌱 (Backups happen automatically — see
+[Automatic backups](#-automatic-backups-survive-the-oops) below.)
 
 > 🤓 *For the curious:* writes are atomic (tempfile + rename), so even if
 > your laptop crashes mid-save, the previous file is intact. Concurrent
@@ -118,6 +124,83 @@ the same files. `.env` is gitignored so machine-specific paths stay yours. 🔒
 
 Same `.env` file lets you override the source workbook, host, and port —
 see [`.env.example`](.env.example) for all available variables.
+
+---
+
+## 🛟 Automatic backups — survive the *oops*
+
+Every time the server exits cleanly (Ctrl+C in `start.bat`, manual
+`uvicorn` exit, or `python scripts/backup.py` run by hand) Expenso copies
+your whole data dir into a new timestamped folder:
+
+```
+<EXPENSO_BACKUP_DIR>/
+├── expenso-backup-2026-05-25_142058/
+│   ├── categories.csv
+│   ├── entries.csv
+│   └── budgets.csv
+├── expenso-backup-2026-05-25_134412/
+└── ... (newest 5 kept, oldest auto-pruned)
+```
+
+Two env vars control it — defaults shown work for everyone, override only
+if you want backups on a different drive / synced folder:
+
+```dotenv
+EXPENSO_BACKUP_DIR=./backups   # default; point at Mega/OneDrive for off-machine copies
+EXPENSO_BACKUP_COUNT=5         # how many snapshots to retain; 0 = unlimited
+```
+
+### 🧊 The "freeze" — your safety net against catastrophe
+
+A naïve "newest N" rule has one nasty failure mode: if you accidentally
+wipe entries one session, restart 5 times, the bad state is now in every
+snapshot and the original is gone. So Expenso compares your data against
+the latest snapshot on each shutdown and **freezes** the rotation — no
+new backup, no prune — when it sees:
+
+- a CSV that existed in the last snapshot is **missing** in your data dir, **or**
+- a CSV is now **empty** (header-only) when it had rows before, **or**
+- **more than 50%** of a CSV's prior rows are gone AND the file had > 5 rows.
+
+Pure additions, in-place edits, and small audit deletions (2–9 rows out
+of hundreds) all roll backups normally. Mass deletes / wipes / file-gone
+events leave your safety net untouched — older snapshots survive the
+incident so you always have something to restore from. 🪂
+
+You'll see this in the shutdown log:
+
+```
+WARNING expenso.backup :: destructive: 67% of rows removed from entries.csv — above 50% threshold
+WARNING expenso.backup :: backup FROZEN — existing snapshots preserved; prune skipped
+```
+
+### ♻️ Restoring after an *oops*
+
+1. Stop the server.
+2. Open `EXPENSO_BACKUP_DIR`, pick the newest `expenso-backup-…` folder
+   (or an older one if the most-recent already contains the damage).
+3. Copy the CSV(s) you lost back into `EXPENSO_DATA_DIR`.
+4. Start the server again — next shutdown will see "data matches latest
+   snapshot" and resume normal backups.
+
+One-liner PowerShell to restore *everything* from the latest snapshot:
+
+```powershell
+$bk = (Get-ChildItem $env:EXPENSO_BACKUP_DIR -Directory -Filter 'expenso-backup-*' |
+       Sort-Object Name -Descending | Select-Object -First 1).FullName
+Copy-Item "$bk\*.csv" $env:EXPENSO_DATA_DIR -Force
+```
+
+### 📸 Snapshot on demand
+
+Don't want to restart the server but want a snapshot *now*?
+
+```powershell
+venv\Scripts\python.exe scripts\backup.py
+```
+
+Same logic, same freeze rules, same rotation.
 
 ---
 
