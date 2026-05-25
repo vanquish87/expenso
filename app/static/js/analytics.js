@@ -17,6 +17,10 @@
   const state = {
     dateFrom: '',
     dateTo: '',
+    // Number of calendar months the current view covers. Set from the date
+    // range when supplied; otherwise discovered from the data span at L1
+    // load time so L2/L3 can divide totals by the same denominator.
+    monthsInRange: 1,
     // remembered for the chain so the next level can scope itself
     group: '',
     category: '',
@@ -203,16 +207,10 @@
   }
 
   // --- monthly average -----------------------------------------------------
-  // n = number of distinct months covered by the date range; we use the
-  // range when set, otherwise infer from the data we already have. Avoids
-  // a divide-by-zero so a "first day of the period" view doesn't NaN.
-  function monthsCoveredByState() {
-    if (state.dateFrom && state.dateTo) {
-      return monthsBetween(state.dateFrom, state.dateTo);
-    }
-    return 1;
-  }
-
+  // The denominator for "monthly average" everywhere. When a date range is
+  // active we use it; otherwise we use the actual data span (number of
+  // months with at least one entry, from /summary's `monthly` array).
+  // Stored on state so L2/L3 modals can reuse it.
   function monthsBetween(a, b) {
     const da = new Date(a + 'T00:00:00');
     const db = new Date(b + 'T00:00:00');
@@ -277,10 +275,14 @@
     const s = await getJson('/api/analytics/summary' + rangeQS());
     const groups = s.spend_by_group || [];
     const total = groups.reduce((acc, g) => acc + g.value, 0);
-    const months = monthsCoveredByState();
+
+    // Anchor the denominator now — L2/L3 modals reuse it.
+    state.monthsInRange = (state.dateFrom && state.dateTo)
+      ? monthsBetween(state.dateFrom, state.dateTo)
+      : Math.max(1, (s.monthly || []).length);
 
     document.querySelector('[data-l1-total]').textContent = fmt(total);
-    document.querySelector('[data-l1-monthly]').textContent = fmt(total / months);
+    document.querySelector('[data-l1-monthly]').textContent = fmt(total / state.monthsInRange);
     document.querySelector('[data-l1-count]').textContent = groups.length;
 
     doughnut('chart-l1', groups);
@@ -293,14 +295,13 @@
     const data = await getJson(`/api/analytics/group/${encodeURIComponent(group)}/subs${rangeQS()}`);
     const items = data.items || [];
     const total = data.total || 0;
-    const months = monthsCoveredByState();
 
     // Use the icon of the first item (or fallback) for the modal title icon.
     const groupIcon = pickGroupIcon(group, items);
     document.querySelector('[data-sub-icon]').textContent = groupIcon;
     document.querySelector('[data-sub-title]').textContent = group;
     document.querySelector('[data-sub-total]').textContent   = fmt(total);
-    document.querySelector('[data-sub-monthly]').textContent = fmt(total / months);
+    document.querySelector('[data-sub-monthly]').textContent = fmt(total / state.monthsInRange);
 
     doughnut('chart-sub', items);
     renderSubList(document.getElementById('drill-sub-list'), items);
@@ -321,12 +322,11 @@
     const data = await getJson(`/api/analytics/category/${encodeURIComponent(category)}/months${rangeQS()}`);
     const items = data.items || [];
     const total = data.total || 0;
-    const monthsCount = items.length || 1;
 
     document.querySelector('[data-month-icon]').textContent = icon || '🏷️';
     document.querySelector('[data-month-title]').textContent = category;
     document.querySelector('[data-month-total]').textContent   = fmt(total);
-    document.querySelector('[data-month-monthly]').textContent = fmt(total / monthsCount);
+    document.querySelector('[data-month-monthly]').textContent = fmt(total / state.monthsInRange);
 
     bar('chart-month', items, '#ef4444');
     renderMonthList(document.getElementById('drill-month-list'), items);
@@ -388,8 +388,16 @@
   // --- init ----------------------------------------------------------------
   function init() {
     const form = document.getElementById('range-form');
-    if (form) form.addEventListener('submit', (ev) => { ev.preventDefault(); loadL1(form); });
-    loadL1(form);
+    if (form) form.addEventListener('submit', (ev) => { ev.preventDefault(); loadL1(form).catch(reportErr); });
+    loadL1(form).catch(reportErr);
+  }
+
+  // Surface any load failure in the UI (and the console) so the page never
+  // silently renders empty cards — easier to debug than "nothing happening".
+  function reportErr(e) {
+    console.error('[analytics] failed:', e);
+    const ul = document.getElementById('drill-l1-list');
+    if (ul) ul.innerHTML = `<li class="muted">Load failed: ${escapeHtml(String(e && e.message || e))}. Check DevTools console.</li>`;
   }
 
   if (window.Chart) init();
