@@ -35,7 +35,7 @@ def _budget_repo() -> BudgetCsvRepository:
 
 
 def get_category_service() -> CategoryService:
-    return CategoryService(_category_repo(), _entry_repo())
+    return CategoryService(_category_repo(), _entry_repo(), _budget_repo())
 
 
 def get_entry_service() -> EntryService:

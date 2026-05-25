@@ -4,15 +4,21 @@ from __future__ import annotations
 from typing import List, Optional
 
 from ..core.exceptions import ConflictError, NotFoundError, ValidationError
-from ..domain.interfaces import CategoryRepository, EntryRepository
+from ..domain.interfaces import BudgetRepository, CategoryRepository, EntryRepository
 from ..domain.models import Category
 from ..templating import invalidate_category_icon_cache
 
 
 class CategoryService:
-    def __init__(self, repo: CategoryRepository, entries: EntryRepository) -> None:
+    def __init__(
+        self,
+        repo: CategoryRepository,
+        entries: EntryRepository,
+        budgets: BudgetRepository,
+    ) -> None:
         self._repo = repo
         self._entries = entries
+        self._budgets = budgets
 
     def list_all(self) -> List[Category]:
         return sorted(
@@ -99,10 +105,50 @@ class CategoryService:
                     s_new = Category(id=s.id, name=s.name, parent=new_name, icon=s.icon)
                     self._repo.update(s_new)
 
+        # Cascade the rename to every entry/budget that referenced the old
+        # name. Without this, historical rows would orphan ("(uncategorised)"
+        # in analytics, no drill-down, broken budget linkage). The category
+        # rename in `entries.csv` is name-keyed — no FK to fix up, just a
+        # string substitution.
+        if new_name != existing.name:
+            self._cascade_rename(existing.name, new_name)
+
         updated = Category(id=category_id, name=new_name, parent=new_parent, icon=new_icon)
         result = self._repo.update(updated)
         invalidate_category_icon_cache()
         return result
+
+    def _cascade_rename(self, old_name: str, new_name: str) -> None:
+        """Rewrite every entry / budget that points to ``old_name`` so it
+        points to ``new_name`` instead.
+
+        Walks each list once and rewrites via ``replace_all`` so the CSV
+        file is touched exactly once per kind — one atomic swap thanks to
+        the tempfile+rename pattern in the repos.
+        """
+        entries = self._entries.list()
+        touched = False
+        new_entries = []
+        for e in entries:
+            if e.category == old_name:
+                touched = True
+                new_entries.append(e.model_copy(update={"category": new_name}))
+            else:
+                new_entries.append(e)
+        if touched:
+            self._entries.replace_all(new_entries)
+
+        budgets = self._budgets.list()
+        touched = False
+        new_budgets = []
+        for b in budgets:
+            if b.category == old_name:
+                touched = True
+                new_budgets.append(b.model_copy(update={"category": new_name}))
+            else:
+                new_budgets.append(b)
+        if touched:
+            self._budgets.replace_all(new_budgets)
 
     def delete(self, category_id: str) -> None:
         existing = self.get(category_id)
