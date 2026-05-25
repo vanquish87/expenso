@@ -29,10 +29,10 @@ the black window to stop.
 | Where | What you can do |
 | --- | --- |
 | 🏠 **Home** | Quick KPIs + your latest entries + smart insights |
-| 🏷️ **Categories** | Groups + sub-categories with **per-category icon picker** 🎨 |
+| 🏷️ **Categories** | Groups + sub-categories; **icon picker with 1,000+ emojis** + search 🎨 |
 | 📝 **Entries** | Day-grouped ledger; tap a row → detail modal with edit / delete |
 | 🎯 **Budgets** | Set a monthly cap per category — see how close you are |
-| 📊 **Analytics** | Chart.js dashboard: doughnuts, lines, bars, top spends, insights |
+| 📊 **Analytics** | **Drill-down**: Groups → Sub-cats → Months → Transactions → edit, all in stacked modals 🔍 |
 
 ---
 
@@ -45,10 +45,16 @@ the black window to stop.
   leaving the modal; Save/Cancel flip back. 🗑 deletes (with confirm).
 - ⚡ **HTMX makes it snappy** — Add entry, Filter, Delete, Edit all update
   the ledger **in place**, no full page reload, no scroll jump.
-- 🎨 **Pick any emoji per category** — on `/categories`, click the
-  circular icon next to a name → grid of ~80 emojis pops up → pick one.
-  Auto-detection still works (a `GROCERIES` category guesses 🛒) so you
-  only customise when you want to.
+- 🎨 **1,000+ emoji icon picker with search** — on `/categories`,
+  click any circle icon → a phone-keyboard-style picker pops open with
+  ~1003 emojis across **8 sections** (Smileys, People, Animals, Food,
+  Activity, Travel, Objects, Symbols). Type `pizza` 🍕, `car` 🚗,
+  `biryani` 🍛, `billo` 🐶 — search auto-narrows the grid live.
+  Auto-detection (`GROCERIES` → 🛒) still kicks in when you don't pick.
+- 🔁 **Rename safely** — change a category name and every entry +
+  budget that referenced the old name gets rewritten atomically. No
+  more orphaned `(uncategorised)` rows after a rename. Parent change?
+  Icon change? Same — silently propagates everywhere.
 - 🧠 **Auto-icons get clever** — `GROCERIES - L1 - BASIC` → 🥖,
   `GROCERIES - L2 - MUNCH` → 🍿, `RESTAURANTS - L3 - LAVISH` → 🥂,
   `BILLO'S POCKET` → 👛, …
@@ -66,7 +72,7 @@ the black window to stop.
 
 ---
 
-## 🧠 The smart bits
+## 🧠 The smart bits (on `/home`)
 
 Expenso doesn't just show numbers — it points out things you'd otherwise miss:
 
@@ -78,6 +84,35 @@ Expenso doesn't just show numbers — it points out things you'd otherwise miss:
 - 🏆 **Biggest single buy** — that one transaction that bent the chart
 
 All rules-based, no AI guesses, no data leaves your laptop. 🔒
+
+---
+
+## 🔍 Drill-down analytics — follow the money
+
+The `/analytics` page answers the question you actually ask — *"where did
+Family Travel go?"* — by letting you drill from a top-level total all the
+way down to one transaction. Each level opens as a modal stacked on top
+of the previous; tap outside to close them all, the back arrow to step
+back one, or × to dismiss everything.
+
+```
+Level 1 (page)    Donut + list of all spend groups (Family Travel, Billo, …)
+   ↓ tap a group
+Level 2 (modal)   Donut + list of sub-categories inside that group
+   ↓ tap a sub
+Level 3 (modal)   Bar chart of monthly spend for that sub-category
+   ↓ tap a month
+Level 4 (modal)   Day-grouped transactions inside (sub, month)
+   ↓ tap a transaction
+Level 5 (modal)   View + ✎ Edit + 🗑 Delete (same dialog as /entries)
+```
+
+- 📅 **One date range filters everything** — set it once at the top of
+  the page; every drill level scopes to the same window.
+- 💰 **Monthly average shown at every level** — Total / number of months
+  in your data span (or in the range you picked).
+- ⚡ **Edit a transaction without leaving analytics** — saves trigger a
+  silent re-fetch of the level-4 list, then peel back; no page reload.
 
 ---
 
@@ -97,6 +132,13 @@ deterministically — newest entries on top within each day, no random shuffle.
 Want to start over? Delete the folder — the app re-seeds from your
 spreadsheet on the next run. 🌱 (Backups happen automatically — see
 [Automatic backups](#-automatic-backups-survive-the-oops) below.)
+
+The link from `entries.csv` / `budgets.csv` to a category is by **name**
+(plain string, no foreign-key id). That keeps the files human-readable and
+diff-friendly. When you rename a category on `/categories`, every matching
+row in `entries.csv` and `budgets.csv` is **rewritten atomically** so the
+reference doesn't break — your historical data keeps rolling up under the
+new name, no `(uncategorised)` orphans.
 
 > 🤓 *For the curious:* writes are atomic (tempfile + rename), so even if
 > your laptop crashes mid-save, the previous file is intact. Concurrent
