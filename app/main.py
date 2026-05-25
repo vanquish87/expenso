@@ -20,6 +20,7 @@ from .dependencies import (
     get_import_service,
 )
 from .routers import analytics, api, budgets, categories, entries, home
+from .services.backup_service import run_backup
 from .templating import templates
 
 log = logging.getLogger("expenso")
@@ -89,6 +90,13 @@ def create_app() -> FastAPI:
         # Touch the repos so CSV files exist before we serve a request.
         _category_repo(); _entry_repo(); _budget_repo()
         _seed_if_empty()
+
+    @app.on_event("shutdown")
+    def _on_shutdown() -> None:
+        try:
+            run_backup()
+        except Exception:
+            log.exception("backup on shutdown failed")
 
     @app.get("/healthz", include_in_schema=False, response_class=HTMLResponse)
     def healthz() -> str:
