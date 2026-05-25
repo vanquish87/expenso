@@ -99,7 +99,9 @@
   {% endfor %}
 </datalist>
 
-<!-- Icon picker modal — opens when any [data-pick-icon] circle is clicked. -->
+<!-- Icon picker modal — opens when any [data-pick-icon] circle is clicked.
+     Now sectioned (Smileys / People / Animals / Food / Activity / Travel /
+     Objects / Symbols) with a sticky tab strip for quick jumps. -->
 <div id="icon-picker-modal" class="modal" hidden aria-hidden="true">
   <div class="modal__backdrop" data-modal-close></div>
   <div class="modal__dialog modal__dialog--picker" role="dialog" aria-modal="true" aria-labelledby="icon-picker-title">
@@ -107,22 +109,33 @@
       <h2 id="icon-picker-title">Select icon</h2>
       <button type="button" class="detail__btn" data-modal-close aria-label="Close">×</button>
     </header>
-    <div class="icon-picker-grid" role="listbox" aria-label="Icon choices">
-      <button type="button" class="icon-picker-grid__btn icon-picker-grid__btn--auto"
-              data-icon-choice data-icon="" title="Use auto-detected icon">
-        <span>auto</span>
-      </button>
-      {% for em in [
-        '🛒','🍽️','☕','🍔','🍕','🍦','🥖','🍿','🍪','🥂','💎','🍹','🥛','🧃','🍵','🥘','🥟','🫓','🍛',
-        '⛽','🚖','🛵','🏍️','🛺','🚇','🚆','✈️','🏨','🧳','🅿️','🛣️',
-        '💡','🔥','📱','📺','📶','💧','🏠','🔧','🔌',
-        '💇','🧴','💊','🩺','🏥','🦷','🛡️','💆','🧘',
-        '🏃','🏋️','🎬','🎮','🎤','📚','💻','📷','🛍️','👕','👟',
-        '🏫','🧸','👶','👨‍👩‍👧‍👦','🐾','🐶','🐱',
-        '👛','💰','💼','💳','📈','🐷','💸','🔁','🎉',
-        '🚶','🎁','🎂','💐','🏷️',
-      ] %}
-        <button type="button" class="icon-picker-grid__btn" data-icon-choice data-icon="{{ em }}" title="{{ em }}">{{ em }}</button>
+
+    <nav class="picker__tabs" aria-label="Icon sections">
+      <button type="button" class="picker__tab is-active" data-picker-tab="_auto" title="Use auto-detected icon">auto</button>
+      {% for name, slug, _ in emoji_sections %}
+        <button type="button" class="picker__tab" data-picker-tab="{{ slug }}" title="Jump to {{ name }}">{{ name }}</button>
+      {% endfor %}
+    </nav>
+
+    <div class="picker__body" role="listbox" aria-label="Icon choices">
+      <section class="picker__section" data-picker-section="_auto">
+        <h3 class="picker__section-head">Default</h3>
+        <div class="icon-picker-grid">
+          <button type="button" class="icon-picker-grid__btn icon-picker-grid__btn--auto"
+                  data-icon-choice data-icon="" title="Use auto-detected icon">
+            <span>auto</span>
+          </button>
+        </div>
+      </section>
+      {% for name, slug, items in emoji_sections %}
+      <section class="picker__section" data-picker-section="{{ slug }}">
+        <h3 class="picker__section-head">{{ name }}</h3>
+        <div class="icon-picker-grid">
+          {% for em in items %}
+            <button type="button" class="icon-picker-grid__btn" data-icon-choice data-icon="{{ em }}" title="{{ em }}">{{ em }}</button>
+          {% endfor %}
+        </div>
+      </section>
       {% endfor %}
     </div>
   </div>
@@ -133,11 +146,11 @@
 <script>
   (function () {
     var modal  = document.getElementById('icon-picker-modal');
-    var grid   = modal && modal.querySelector('.icon-picker-grid');
-    if (!modal || !grid) return;
+    var body   = modal && modal.querySelector('.picker__body');
+    var tabs   = modal ? Array.prototype.slice.call(modal.querySelectorAll('[data-picker-tab]')) : [];
+    var sections = modal ? Array.prototype.slice.call(modal.querySelectorAll('[data-picker-section]')) : [];
+    if (!modal || !body) return;
 
-    // Which icon-button (the circular preview) triggered the picker.
-    // We update its preview span + the hidden 'icon' input in its form.
     var currentBtn = null;
 
     function open(btn) {
@@ -145,6 +158,9 @@
       modal.hidden = false;
       modal.setAttribute('aria-hidden', 'false');
       document.body.classList.add('modal-open');
+      // Always start at the top (auto + smileys) on open.
+      body.scrollTop = 0;
+      setActiveTab('_auto');
     }
     function close() {
       modal.hidden = true;
@@ -154,27 +170,56 @@
       currentBtn = null;
     }
 
-    // Any [data-pick-icon] button opens the picker for itself.
+    // Open the picker for whichever circle was clicked.
     document.querySelectorAll('[data-pick-icon]').forEach(function (btn) {
       btn.addEventListener('click', function () { open(btn); });
     });
 
-    // Click a grid icon → apply + close.
-    grid.addEventListener('click', function (e) {
+    // Pick an emoji → apply + close.
+    body.addEventListener('click', function (e) {
       var choice = e.target.closest('[data-icon-choice]');
       if (!choice || !currentBtn) return;
       var emoji = choice.dataset.icon || '';
 
-      // Update the preview span on the trigger button.
       var preview = currentBtn.querySelector('[data-icon-preview]');
       if (preview) preview.textContent = emoji || '❓';
 
-      // Update the hidden 'icon' input in the enclosing form.
       var form  = currentBtn.closest('form');
       var input = form && form.querySelector('input[name="icon"]');
       if (input) input.value = emoji;
 
       close();
+    });
+
+    // Tab click → scroll the corresponding section into view.
+    tabs.forEach(function (tab) {
+      tab.addEventListener('click', function () {
+        var slug = tab.dataset.pickerTab;
+        var target = modal.querySelector('[data-picker-section="' + slug + '"]');
+        if (target) {
+          target.scrollIntoView({ block: 'start', behavior: 'smooth' });
+        }
+        setActiveTab(slug);
+      });
+    });
+
+    function setActiveTab(slug) {
+      tabs.forEach(function (t) {
+        t.classList.toggle('is-active', t.dataset.pickerTab === slug);
+      });
+    }
+
+    // As the body scrolls, highlight whichever section is leading the viewport.
+    // IntersectionObserver isn't quite right here (we want "top-most visible"
+    // not "most-intersecting"); a tiny scroll listener does the job cheaply.
+    body.addEventListener('scroll', function () {
+      var topY = body.getBoundingClientRect().top + 80; // a bit below the sticky tabs
+      var current = sections[0];
+      for (var i = 0; i < sections.length; i++) {
+        if (sections[i].getBoundingClientRect().top <= topY) current = sections[i];
+        else break;
+      }
+      if (current) setActiveTab(current.dataset.pickerSection);
     });
 
     modal.querySelectorAll('[data-modal-close]').forEach(function (el) {
