@@ -8,6 +8,10 @@ you stuff. 🪄
 No database to install. No cloud account. Your data lives in plain **CSV files**
 on your computer, so you can open them in Excel any time. 📂
 
+> 📜 What changed in each release? See [CHANGELOG.md](CHANGELOG.md). Versions
+> follow **CalVer** (`YYYY.MM.N`) — date + counter, easier than SemVer for
+> a single-user app.
+
 ---
 
 ## 🚀 Get started in 30 seconds

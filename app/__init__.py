@@ -1,2 +1,3 @@
 """Expenso — FastAPI expense tracker (CSV-backed)."""
-__version__ = "0.1.0"
+# CalVer: YYYY.MM.N — see CHANGELOG.md.
+__version__ = "2026.05.1"
