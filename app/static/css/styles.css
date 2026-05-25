@@ -417,6 +417,23 @@ input[type="number"] { -moz-appearance: textfield; }
 }
 .picker__head { justify-content: space-between; align-items: center; }
 
+.picker__search-wrap {
+  padding: 10px 12px 0;
+}
+.picker__search {
+  width: 100%;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 8px 12px;
+  border-radius: 999px;
+  font-size: 13px;
+  outline: none;
+  transition: border-color .12s ease;
+}
+.picker__search:focus { border-color: var(--primary); }
+.picker__search::placeholder { color: var(--muted); }
+
 .picker__tabs {
   display: flex;
   gap: 4px;
@@ -427,6 +444,12 @@ input[type="number"] { -moz-appearance: textfield; }
   background: var(--surface);
   /* Hide horizontal scrollbar but keep scrollable behavior */
   scrollbar-width: thin;
+}
+.picker__empty {
+  padding: 24px 12px;
+  text-align: center;
+  color: var(--text-dim);
+  font-size: 14px;
 }
 .picker__tab {
   appearance: none; -webkit-appearance: none;

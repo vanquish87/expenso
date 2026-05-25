@@ -6,7 +6,7 @@ from typing import Optional
 from fastapi import APIRouter, Depends, Form, HTTPException, Request
 from fastapi.responses import RedirectResponse
 
-from ..core.emoji_picker import EMOJI_SECTIONS
+from ..core.emoji_picker import sections_with_search
 from ..core.exceptions import ConflictError, NotFoundError, ValidationError
 from ..dependencies import get_category_service
 from ..services.category_service import CategoryService
@@ -26,7 +26,7 @@ def index(
             "request": request,
             "grouped": svc.grouped(),
             "groups": svc.groups(),
-            "emoji_sections": EMOJI_SECTIONS,
+            "emoji_sections": sections_with_search(),
             "error": request.query_params.get("error"),
             "ok": request.query_params.get("ok"),
         },

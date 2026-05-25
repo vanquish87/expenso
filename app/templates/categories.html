@@ -110,6 +110,13 @@
       <button type="button" class="detail__btn" data-modal-close aria-label="Close">×</button>
     </header>
 
+    <div class="picker__search-wrap">
+      <input type="search" class="picker__search" id="picker-search"
+             placeholder="Search 1,000 icons (pizza, car, biryani, …)"
+             autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
+             aria-label="Search icons">
+    </div>
+
     <nav class="picker__tabs" aria-label="Icon sections">
       <button type="button" class="picker__tab is-active" data-picker-tab="_auto" title="Use auto-detected icon">auto</button>
       {% for name, slug, _ in emoji_sections %}
@@ -122,7 +129,7 @@
         <h3 class="picker__section-head">Default</h3>
         <div class="icon-picker-grid">
           <button type="button" class="icon-picker-grid__btn icon-picker-grid__btn--auto"
-                  data-icon-choice data-icon="" title="Use auto-detected icon">
+                  data-icon-choice data-icon="" data-search="auto default" title="Use auto-detected icon">
             <span>auto</span>
           </button>
         </div>
@@ -131,12 +138,13 @@
       <section class="picker__section" data-picker-section="{{ slug }}">
         <h3 class="picker__section-head">{{ name }}</h3>
         <div class="icon-picker-grid">
-          {% for em in items %}
-            <button type="button" class="icon-picker-grid__btn" data-icon-choice data-icon="{{ em }}" title="{{ em }}">{{ em }}</button>
+          {% for em, search in items %}
+            <button type="button" class="icon-picker-grid__btn" data-icon-choice data-icon="{{ em }}" data-search="{{ search }}" title="{{ search }}">{{ em }}</button>
           {% endfor %}
         </div>
       </section>
       {% endfor %}
+      <p class="picker__empty" data-picker-empty hidden>No icons match — try a different word.</p>
     </div>
   </div>
 </div>
@@ -149,6 +157,8 @@
     var body   = modal && modal.querySelector('.picker__body');
     var tabs   = modal ? Array.prototype.slice.call(modal.querySelectorAll('[data-picker-tab]')) : [];
     var sections = modal ? Array.prototype.slice.call(modal.querySelectorAll('[data-picker-section]')) : [];
+    var searchInput = document.getElementById('picker-search');
+    var emptyMsg = modal && modal.querySelector('[data-picker-empty]');
     if (!modal || !body) return;
 
     var currentBtn = null;
@@ -158,9 +168,12 @@
       modal.hidden = false;
       modal.setAttribute('aria-hidden', 'false');
       document.body.classList.add('modal-open');
-      // Always start at the top (auto + smileys) on open.
+      // Reset any leftover filter from a previous open + scroll to top.
+      if (searchInput) { searchInput.value = ''; applyFilter(''); }
       body.scrollTop = 0;
       setActiveTab('_auto');
+      // Auto-focus the search so the user can just type.
+      if (searchInput) setTimeout(function () { searchInput.focus(); }, 30);
     }
     function close() {
       modal.hidden = true;
@@ -206,6 +219,57 @@
     function setActiveTab(slug) {
       tabs.forEach(function (t) {
         t.classList.toggle('is-active', t.dataset.pickerTab === slug);
+      });
+    }
+
+    // --- search: filter buttons by their data-search blob ------------------
+    function applyFilter(raw) {
+      var q = (raw || '').trim().toLowerCase();
+      // Split on whitespace so "fast car" requires both words to match.
+      var terms = q ? q.split(/\s+/) : [];
+      var anyShownGlobal = false;
+
+      sections.forEach(function (section) {
+        // Skip filtering the synthetic "_auto" section — it always stays.
+        if (section.dataset.pickerSection === '_auto') {
+          section.style.display = q ? 'none' : '';
+          return;
+        }
+        var anyShown = false;
+        var buttons = section.querySelectorAll('.icon-picker-grid__btn');
+        for (var i = 0; i < buttons.length; i++) {
+          var btn = buttons[i];
+          var hay = btn.dataset.search || '';
+          var matches = true;
+          for (var t = 0; t < terms.length; t++) {
+            if (hay.indexOf(terms[t]) === -1) { matches = false; break; }
+          }
+          btn.style.display = matches ? '' : 'none';
+          if (matches) anyShown = true;
+        }
+        section.style.display = anyShown ? '' : 'none';
+        if (anyShown) anyShownGlobal = true;
+      });
+
+      // Tabs lose their "jump to section" meaning when filtering — hide them.
+      tabs.forEach(function (t) {
+        t.style.display = q ? 'none' : '';
+      });
+
+      // Empty state — only when actively filtering.
+      if (emptyMsg) emptyMsg.hidden = !(q && !anyShownGlobal);
+    }
+
+    if (searchInput) {
+      searchInput.addEventListener('input', function () { applyFilter(searchInput.value); });
+      // Hitting Esc while in the search clears it first (instead of closing
+      // the modal) — feels less destructive when you're mid-search.
+      searchInput.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && searchInput.value) {
+          e.stopPropagation();
+          searchInput.value = '';
+          applyFilter('');
+        }
       });
     }
 
